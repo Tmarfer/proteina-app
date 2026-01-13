@@ -147,6 +147,11 @@
             color: var(--color-good);
             font-weight: 600;
         }
+        
+        .porcao {
+            color: #666;
+            font-size: 12px;
+        }
 
         .custo-prot {
             color: var(--color-primary);
@@ -246,14 +251,23 @@
 
     <button class="share-btn" onclick="compartilharWhatsApp()">📲 Compartilhar no WhatsApp</button>
 
-    <div style="margin: 16px 0; padding: 12px; background: var(--color-surface); border-radius: 6px;"><label for="pesoUsuario" style="display: block; margin-bottom: 8px; font-weight: 600;">Seu Peso (kg):</label><input type="number" id="pesoUsuario" placeholder="Ex: 70" min="30" max="200" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 14px;" onchange="calcularProteinaDiaria()"><p style="font-size: 12px; color: 666; margin: 8px 0 0 0;"><strong>Proteina necessaria:</strong> <span id="proteinaDiaria">-</span>g/dia</p><p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">Baseado em padrão de <a href="https://link.springer.com/article/10.1186/s12970-018-0215-1" target="_blank" style="color: var(--color-primary); text-decoration: none;">1.6-2.2g/kg (Referência)</a> para treino de forca\n *Referência: Journal of the International Society of Sports Nutrition</p></div>
+    <div style="margin: 16px 0; padding: 12px; background: var(--color-surface); border-radius: 6px;">
+        <label for="pesoUsuario" style="display: block; margin-bottom: 8px; font-weight: 600;">Seu Peso (kg):</label>
+        <input type="number" id="pesoUsuario" placeholder="Ex: 70" min="30" max="200" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 14px;" onchange="calcularProteinaDiaria()">
+        <p style="font-size: 12px; color: #666; margin: 8px 0 0 0;"><strong>Proteina necessaria:</strong> <span id="proteinaDiaria">-</span>g/dia</p>
+        <p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">
+            Baseado em padrão de <a href="https://link.springer.com/article/10.1186/s12970-018-0215-1" target="_blank" style="color: var(--color-primary); text-decoration: none;">1.6-2.2g/kg (Referência)</a> para treino de força<br>
+            <strong>*Referência: Journal of the International Society of Sports Nutrition</strong>
+        </p>
+    </div>
+
     <div class="stats">
         <div class="stat-card">
             <div class="stat-label">Mais Barato<br/><small>(R$/g Prot.)</small></div>
             <div class="stat-value" id="cheapest">R$ —</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Mais Proteína<br/><small>(g/100g)</small></div>
+            <div class="stat-label">Mais Proteína<br/><small>(g/porção)</small></div>
             <div class="stat-value" id="best-protein">— g</div>
         </div>
     </div>
@@ -267,6 +281,7 @@
         <button class="filter-btn" onclick="filtrarCategoria('carne')">🍖 Carne</button>
         <button class="filter-btn" onclick="filtrarCategoria('frango')">🍗 Frango</button>
         <button class="filter-btn" onclick="filtrarCategoria('peixe')">🐟 Peixe</button>
+        <button class="filter-btn" onclick="filtrarCategoria('suplemento')">⚡ Suplem.</button>
         <button class="filter-btn" onclick="filtrarCategoria('outros')">🥚 Outros</button>
         <button class="filter-btn" onclick="filtrarCategoria('')">Ver Tudo</button>
     </div>
@@ -276,7 +291,8 @@
             <thead>
                 <tr>
                     <th onclick="ordenar('fonte')">Fonte <span class="arrow"></span></th>
-                    <th onclick="ordenar('proteina')">Proteína (g/100g) <span class="arrow"></span></th>
+                    <th onclick="ordenar('proteina')">Proteína <span class="arrow"></span></th>
+                    <th>Porção</th>
                     <th onclick="ordenar('custo')">Custo <span class="arrow"></span></th>
                     <th onclick="ordenar('custoProteina')">R$/g Prot. <span class="arrow active">⬇</span></th>
                 </tr>
@@ -292,21 +308,26 @@
     </div>
 
     <script>
+        // Custo estimado para jan/2026. 
+        // Whey: Considerando preço médio de concentrado (~R$ 100/kg).
+        // Barra: Considerando preço unitário de mercado.
         const dados = [
-            { fonte: 'Patinho bovino', categoria: 'carne', proteina: 35, custo: 4.5, custoProteina: 0.013 },
-            { fonte: 'Filé mignon', categoria: 'carne', proteina: 33, custo: 8.0, custoProteina: 0.024 },
-            { fonte: 'Contra-filé', categoria: 'carne', proteina: 32, custo: 6.0, custoProteina: 0.019 },
-            { fonte: 'Miolo alcatra', categoria: 'carne', proteina: 33, custo: 5.5, custoProteina: 0.017 },
-            { fonte: 'Maminha', categoria: 'carne', proteina: 31, custo: 5.0, custoProteina: 0.016 },
-            { fonte: 'Lagarto', categoria: 'carne', proteina: 33, custo: 5.0, custoProteina: 0.015 },
-            { fonte: 'Coxão mole', categoria: 'carne', proteina: 32, custo: 5.0, custoProteina: 0.016 },
-            { fonte: 'Peito frango', categoria: 'frango', proteina: 32, custo: 1.5, custoProteina: 0.005 },
-            { fonte: 'Coxa frango', categoria: 'frango', proteina: 27, custo: 1.2, custoProteina: 0.004 },
-            { fonte: 'Coxinha da asa', categoria: 'frango', proteina: 19, custo: 1.5, custoProteina: 0.008 },
-            { fonte: 'Tilápia', categoria: 'peixe', proteina: 26, custo: 5.0, custoProteina: 0.019 },
-            { fonte: 'Atum enlatado natural', categoria: 'peixe', proteina: 24, custo: 4.7, custoProteina: 0.020 },
-            { fonte: 'Ovo inteiro cozido', categoria: 'outros', proteina: 13, custo: 1.0, custoProteina: 0.008 },
-            { fonte: 'Queijo cottage magro', categoria: 'outros', proteina: 12, custo: 2.5, custoProteina: 0.021 }
+            { fonte: 'Patinho bovino', categoria: 'carne', proteina: 35, porcao: '100g', custo: 4.5, custoProteina: 0.128 },
+            { fonte: 'Filé mignon', categoria: 'carne', proteina: 33, porcao: '100g', custo: 8.0, custoProteina: 0.242 },
+            { fonte: 'Contra-filé', categoria: 'carne', proteina: 32, porcao: '100g', custo: 6.0, custoProteina: 0.187 },
+            { fonte: 'Miolo alcatra', categoria: 'carne', proteina: 33, porcao: '100g', custo: 5.5, custoProteina: 0.166 },
+            { fonte: 'Maminha', categoria: 'carne', proteina: 31, porcao: '100g', custo: 5.0, custoProteina: 0.161 },
+            { fonte: 'Lagarto', categoria: 'carne', proteina: 33, porcao: '100g', custo: 5.0, custoProteina: 0.151 },
+            { fonte: 'Coxão mole', categoria: 'carne', proteina: 32, porcao: '100g', custo: 5.0, custoProteina: 0.156 },
+            { fonte: 'Peito frango', categoria: 'frango', proteina: 32, porcao: '100g', custo: 1.5, custoProteina: 0.046 },
+            { fonte: 'Coxa frango', categoria: 'frango', proteina: 27, porcao: '100g', custo: 1.2, custoProteina: 0.044 },
+            { fonte: 'Coxinha da asa', categoria: 'frango', proteina: 19, porcao: '100g', custo: 1.5, custoProteina: 0.078 },
+            { fonte: 'Tilápia', categoria: 'peixe', proteina: 26, porcao: '100g', custo: 5.0, custoProteina: 0.192 },
+            { fonte: 'Atum enlatado', categoria: 'peixe', proteina: 24, porcao: '100g', custo: 6.5, custoProteina: 0.270 },
+            { fonte: 'Ovo inteiro cozido', categoria: 'outros', proteina: 13, porcao: '2 unidades', custo: 1.2, custoProteina: 0.092 },
+            { fonte: 'Queijo cottage', categoria: 'outros', proteina: 12, porcao: '100g', custo: 3.5, custoProteina: 0.291 },
+            { fonte: 'Whey Protein', categoria: 'suplemento', proteina: 24, porcao: '1 Scoop (30g)', custo: 3.5, custoProteina: 0.145 },
+            { fonte: 'Barra Proteína', categoria: 'suplemento', proteina: 12, porcao: '1 Unidade', custo: 8.0, custoProteina: 0.666 }
         ];
 
         let filtroAtual = '';
@@ -324,8 +345,9 @@
                 row.innerHTML = `
                     <td class="fonte-name">${item.fonte}</td>
                     <td class="proteina">${item.proteina}g</td>
-                    <td>R$ ${item.custo.toFixed(1)}</td>
-                    <td class="custo-prot">R$ ${item.custoProteina.toFixed(3)}</td>
+                    <td class="porcao">${item.porcao}</td>
+                    <td>R$ ${item.custo.toFixed(2)}</td>
+                    <td class="custo-prot">R$ ${item.custoProteina.toFixed(2)}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -373,11 +395,19 @@
             const headers = document.querySelectorAll('th');
             headers.forEach(th => {
                 if (th.textContent.toLowerCase().includes(campo === 'fonte' ? 'fonte' : 
-                    campo === 'proteina' ? 'proteína' :
-                    campo === 'custo' ? 'custo' : 'r$/g')) {
+                    campo === 'custo' ? 'custo' : 
+                    campo === 'proteina' && !th.textContent.includes('R$') ? 'proteína' : 
+                    'r$/g')) {
+                    
+                    // Pequeno ajuste para garantir que pegamos o header certo
+                    if (campo === 'proteina' && th.textContent.includes('R$')) return;
+                    if (campo === 'custoProteina' && !th.textContent.includes('R$')) return;
+
                     const arrow = th.querySelector('.arrow');
-                    arrow.classList.add('active');
-                    arrow.textContent = direcaoOrdenacao === 'asc' ? '⬇' : '⬆';
+                    if (arrow) {
+                        arrow.classList.add('active');
+                        arrow.textContent = direcaoOrdenacao === 'asc' ? '⬇' : '⬆';
+                    }
                 }
             });
         }
@@ -403,32 +433,44 @@
             renderizarTabela(dataFiltrada);
         }
 
-        function calcularProteinaDiaria() { const peso = parseFloat(document.getElementById('pesoUsuario').value); if(!peso || peso < 30) { document.getElementById('proteinaDiaria').textContent = '-'; return; } const minimo = (peso * 1.6).toFixed(0); const maximo = (peso * 2.2).toFixed(0); document.getElementById('proteinaDiaria').textContent = minimo + '-' + maximo; }
+        function calcularProteinaDiaria() { 
+            const peso = parseFloat(document.getElementById('pesoUsuario').value); 
+            if(!peso || peso < 30) { 
+                document.getElementById('proteinaDiaria').textContent = '-'; 
+                return; 
+            } 
+            const minimo = (peso * 1.6).toFixed(0); 
+            const maximo = (peso * 2.2).toFixed(0); 
+            document.getElementById('proteinaDiaria').textContent = minimo + '-' + maximo; 
+        }
+
         function atualizarStats(dataToRender) {
+            if (dataToRender.length === 0) return;
             const melhorCusto = Math.min(...dataToRender.map(d => d.custoProteina));
             const maiorProteina = Math.max(...dataToRender.map(d => d.proteina));
 
-            document.getElementById('cheapest').textContent = `R$ ${melhorCusto.toFixed(3)}`;
+            document.getElementById('cheapest').textContent = `R$ ${melhorCusto.toFixed(2)}`;
             document.getElementById('best-protein').textContent = `${maiorProteina}g`;
         }
 
         function compartilharWhatsApp() {
-            // 1. Montamos o texto "limpo", sem codificação ainda
+            // Recalcula o Top 5 baseado nos dados atuais
+            const top5 = [...dados].sort((a, b) => a.custoProteina - b.custoProteina).slice(0, 5);
+
+            let textoTop5 = '';
+            top5.forEach((item, index) => {
+                textoTop5 += `${index + 1}️⃣ ${item.fonte}: R$${item.custoProteina.toFixed(2)}/g\n`;
+            });
+
             const textoLimpo = 
                 '🥇 *Proteína Eficiente*\n\n' +
-                'Top 5 Melhor Custo-Benefício:\n\n' +
-                '1️⃣ Coxa frango: R$0,004/g\n' +
-                '2️⃣ Peito frango: R$0,005/g\n' +
-                '3️⃣ Ovo: R$0,008/g\n' +
-                '4️⃣ Lagarto: R$0,015/g\n' +
-                '5️⃣ Maminha: R$0,016/g\n\n' +
-                '💪 Proteína completa: coxa frango em destaque!\n\n' +
+                'Top 5 Melhor Custo-Benefício (R$/g de proteína):\n\n' +
+                textoTop5 +
+                '\n💪 Compare Carnes, Ovos e Suplementos!\n\n' +
                 'Acesse a tabela completa aqui 👇\n' + 
-                window.location.href; // Adiciona o link da página atual
+                window.location.href;
 
-            // 2. Codificamos apenas UMA VEZ na hora de gerar o link
             const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(textoLimpo)}`;
-            
             window.open(urlWhatsApp, '_blank');
         }
 
