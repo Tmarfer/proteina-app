@@ -1,67 +1,98 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proteína Eficiente + Planejador</title>
     <style>
-        :root {
-            --color-primary: #25d366;
-            --color-primary-dark: #128c7e;
-            --color-text: #111;
-            --color-bg: #fff;
-            --color-surface: #f8f9fa;
-            --color-border: #e5e5ea;
-            --color-good: #34c759;
+        /* --- Variáveis de Cores (Suporte a Dark Mode) --- */
+        :root[data-theme="light"] {
+            --primary: #25d366;
+            --primary-dark: #128c7e;
+            --bg: #fff;
+            --surface: #f8f9fa;
+            --text: #111;
+            --text-sec: #666;
+            --border: #e5e5ea;
+            --good: #34c759;
+            --highlight: #e8f5e9;
+        }
+
+        :root[data-theme="dark"] {
+            --primary: #25d366;
+            --primary-dark: #4ade80;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #e0e0e0;
+            --text-sec: #a0a0a0;
+            --border: #333;
+            --good: #4ade80;
+            --highlight: #0f2e1b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--color-bg);
-            color: var(--color-text);
+            background: var(--bg);
+            color: var(--text);
             padding: 16px;
-            padding-bottom: 80px; /* Espaço para footer */
+            padding-bottom: 80px;
             line-height: 1.5;
-            max-width: 600px; /* Limita largura em desktop */
+            max-width: 600px;
             margin: 0 auto;
+            transition: background 0.3s, color 0.3s;
         }
 
-        /* --- Header & Global --- */
-        .header {
-            text-align: center;
+        /* --- Header & Theme Toggle --- */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid var(--color-primary);
+            border-bottom: 2px solid var(--primary);
             padding-bottom: 10px;
         }
-        .header h1 { color: var(--color-primary); font-size: 22px; }
+        .header-title h1 { color: var(--primary); font-size: 20px; }
+        .header-title p { font-size: 12px; color: var(--text-sec); }
+        
+        .theme-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
 
-        /* Input de Peso Global */
+        /* Input de Peso */
         .weight-card {
-            background: var(--color-surface);
+            background: var(--surface);
             padding: 16px;
             border-radius: 12px;
-            border: 1px solid var(--color-border);
+            border: 1px solid var(--border);
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .weight-input {
             width: 100%;
             padding: 10px;
             font-size: 16px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border);
             border-radius: 8px;
             margin-top: 5px;
+            background: var(--bg);
+            color: var(--text);
         }
 
-        /* --- Navegação por Abas --- */
+        /* --- Abas --- */
         .nav-tabs {
             display: flex;
-            background: #eee;
+            background: var(--surface);
             border-radius: 10px;
             padding: 4px;
             margin-bottom: 20px;
+            border: 1px solid var(--border);
         }
         .nav-tab {
             flex: 1;
@@ -69,81 +100,74 @@
             background: transparent;
             padding: 10px;
             font-weight: 600;
-            color: #666;
+            color: var(--text-sec);
             cursor: pointer;
             border-radius: 8px;
-            transition: all 0.2s;
             font-size: 14px;
-            text-align: center;
         }
         .nav-tab.active {
-            background: #fff;
-            color: var(--color-primary);
+            background: var(--bg);
+            color: var(--primary);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Conteúdo das Abas */
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- Estilos da Tabela (Aba 1) --- */
+        /* --- Tabela --- */
         .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
         .filter-btn {
             padding: 6px 12px;
-            border: 1px solid #ddd;
-            background: #fff;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
             border-radius: 20px;
             font-size: 12px;
             cursor: pointer;
         }
-        .filter-btn.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+        .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         
-        .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid #eee; }
+        .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 350px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f4f4f4; cursor: pointer; white-space: nowrap; }
-        .text-good { color: var(--color-good); font-weight: bold; }
-        .text-price { color: var(--color-primary); font-weight: bold; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--surface); color: var(--text); cursor: pointer; white-space: nowrap; }
+        .text-good { color: var(--good); font-weight: bold; }
+        .text-price { color: var(--primary); font-weight: bold; }
 
-        /* --- Estilos do Planejador (Aba 2) --- */
+        /* --- Planejador --- */
         .meal-container { display: flex; flex-direction: column; gap: 15px; }
         .meal-card {
-            background: #fff;
-            border: 1px solid var(--color-border);
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 10px;
             padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .meal-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
+        .meal-title { font-weight: 700; color: var(--text); margin-bottom: 8px; }
         .meal-selects { display: flex; flex-direction: column; gap: 8px; }
         select {
             width: 100%;
             padding: 8px;
             border-radius: 6px;
-            border: 1px solid #ddd;
-            background: #fff;
-            font-size: 14px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 13px;
         }
         
         .plan-result {
             margin-top: 20px;
-            background: #e8f5e9;
+            background: var(--highlight);
             padding: 15px;
             border-radius: 10px;
-            border: 1px solid var(--color-primary);
-            display: none; /* Escondido até calcular */
+            border: 1px solid var(--primary);
+            display: none;
         }
-        .plan-result h3 { color: var(--color-primary-dark); margin-bottom: 10px; }
-        .plan-list { font-size: 14px; white-space: pre-line; color: #333; }
+        .plan-result h3 { color: var(--primary-dark); margin-bottom: 10px; }
+        .plan-list { font-size: 14px; white-space: pre-line; color: var(--text); }
 
-        /* --- Botões de Ação --- */
+        /* Botões */
         .btn-action {
             width: 100%;
             padding: 14px;
@@ -153,33 +177,35 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 10px;
-            transition: opacity 0.2s;
         }
-        .btn-calc { background: #333; color: #fff; }
-        .btn-whatsapp { background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-action:active { opacity: 0.9; }
+        .btn-calc { background: var(--text); color: var(--bg); }
+        .btn-whatsapp { background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-whatsapp:hover { opacity: 0.9; }
 
         /* Stats Cards */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: var(--color-surface); padding: 10px; border-radius: 8px; text-align: center; }
-        .stat-val { font-size: 18px; font-weight: bold; color: var(--color-primary); }
-        .stat-lbl { font-size: 11px; color: #666; }
+        .stat-box { background: var(--surface); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+        .stat-val { font-size: 18px; font-weight: bold; color: var(--primary); }
+        .stat-lbl { font-size: 11px; color: var(--text-sec); }
 
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🥇 Proteína Eficiente</h1>
-        <p>App de Otimização Nutricional</p>
+    <div class="header-container">
+        <div class="header-title">
+            <h1>🥇 Proteína Eficiente</h1>
+            <p>Otimização Nutricional</p>
+        </div>
+        <button class="theme-btn" onclick="toggleTheme()">🌓 Tema</button>
     </div>
 
     <div class="weight-card">
         <label for="pesoUsuario" style="font-weight: 600; display: block;">⚖️ Seu Peso (kg):</label>
         <input type="number" id="pesoUsuario" class="weight-input" placeholder="Ex: 75" onchange="atualizarGlobal()">
-        <p style="font-size: 12px; color: #666; margin-top: 5px;">
+        <p style="font-size: 12px; color: var(--text-sec); margin-top: 5px;">
             Necessidade Estimada: <strong id="metaProteinaDisplay">-</strong> g/dia
-            <br><span style="font-size: 10px; color:#999;">*Baseado em 2.0g/kg (Hipertrofia)</span>
+            <br><span style="font-size: 10px; opacity: 0.7;">*Baseado em 2.0g/kg (Hipertrofia)</span>
         </p>
     </div>
 
@@ -192,24 +218,24 @@
         
         <div class="stats-grid">
             <div class="stat-box">
-                <div class="stat-lbl">Melhor Custo</div>
+                <div class="stat-lbl">Melhor Custo (Filtro)</div>
                 <div class="stat-val" id="cheapest">-</div>
             </div>
             <div class="stat-box">
-                <div class="stat-lbl">Mais Proteína</div>
+                <div class="stat-lbl">Mais Proteína (Filtro)</div>
                 <div class="stat-val" id="best-protein">-</div>
             </div>
         </div>
 
-        <input type="text" id="searchInput" placeholder="🔍 Buscar alimento..." style="width: 100%; padding: 10px; border:1px solid #ddd; border-radius: 8px; margin-bottom: 10px;" onkeyup="filtrarTabela()">
+        <input type="text" id="searchInput" placeholder="🔍 Buscar alimento..." style="width: 100%; padding: 10px; border:1px solid var(--border); border-radius: 8px; margin-bottom: 10px; background: var(--surface); color: var(--text);" onkeyup="filtrarTabela()">
 
         <div class="controls">
             <button class="filter-btn active" onclick="filtrarCategoria('')">Tudo</button>
-            <button class="filter-btn" onclick="filtrarCategoria('carne')">Carne</button>
-            <button class="filter-btn" onclick="filtrarCategoria('frango')">Frango</button>
-            <button class="filter-btn" onclick="filtrarCategoria('peixe')">Peixe</button>
-            <button class="filter-btn" onclick="filtrarCategoria('suplemento')">Suplem.</button>
-            <button class="filter-btn" onclick="filtrarCategoria('outros')">Outros</button>
+            <button class="filter-btn" onclick="filtrarCategoria('carne')">🍖 Carne</button>
+            <button class="filter-btn" onclick="filtrarCategoria('frango')">🍗 Frango</button>
+            <button class="filter-btn" onclick="filtrarCategoria('peixe')">🐟 Peixe</button>
+            <button class="filter-btn" onclick="filtrarCategoria('suplemento')">⚡ Suplem.</button>
+            <button class="filter-btn" onclick="filtrarCategoria('outros')">🥚 Outros</button>
         </div>
 
         <div class="table-wrapper">
@@ -218,7 +244,7 @@
                     <tr>
                         <th onclick="ordenar('fonte')">Alimento</th>
                         <th onclick="ordenar('proteina')">Prot.</th>
-                        <th>Porção</th>
+                        <th>Ref.</th>
                         <th onclick="ordenar('custoProteina')">R$/g <small>▼</small></th>
                     </tr>
                 </thead>
@@ -232,8 +258,8 @@
     </div>
 
     <div id="tab-planejamento" class="tab-content">
-        <p style="font-size: 13px; color: #666; margin-bottom: 15px; text-align: center;">
-            Selecione as fontes. O app calcula a quantidade exata (gramas) para bater sua meta diária baseado no peso do almoço/jantar.
+        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 15px; text-align: center;">
+            Selecione até 3 fontes por refeição. O app calcula as quantidades (colheres, unidades ou gramas) para bater sua meta.
         </p>
 
         <div class="meal-container" id="planner-container">
@@ -252,25 +278,27 @@
 
     <script>
         // --- DADOS ---
-        // Proteína por 100g (ou porção unitária)
+        // unitType: 'gramas', 'unidade', 'colher', 'scoop'
+        // gPorUnidade: Peso usado para cálculo. Se for colher, é o peso de 1 colher.
         const dados = [
-            { id: 1, fonte: 'Patinho bovino', categoria: 'carne', proteina: 35, porcaoDesc: '100g', gPorUnidade: 100, custo: 4.5, custoProteina: 0.128 },
-            { id: 2, fonte: 'Filé mignon', categoria: 'carne', proteina: 33, porcaoDesc: '100g', gPorUnidade: 100, custo: 8.0, custoProteina: 0.242 },
-            { id: 3, fonte: 'Contra-filé', categoria: 'carne', proteina: 32, porcaoDesc: '100g', gPorUnidade: 100, custo: 6.0, custoProteina: 0.187 },
-            { id: 4, fonte: 'Miolo alcatra', categoria: 'carne', proteina: 33, porcaoDesc: '100g', gPorUnidade: 100, custo: 5.5, custoProteina: 0.166 },
-            { id: 5, fonte: 'Peito frango (Grelhado)', categoria: 'frango', proteina: 32, porcaoDesc: '100g', gPorUnidade: 100, custo: 1.5, custoProteina: 0.046 },
-            { id: 6, fonte: 'Coxa frango', categoria: 'frango', proteina: 27, porcaoDesc: '100g', gPorUnidade: 100, custo: 1.2, custoProteina: 0.044 },
-            { id: 7, fonte: 'Tilápia', categoria: 'peixe', proteina: 26, porcaoDesc: '100g', gPorUnidade: 100, custo: 5.0, custoProteina: 0.192 },
-            { id: 8, fonte: 'Atum enlatado', categoria: 'peixe', proteina: 24, porcaoDesc: '100g', gPorUnidade: 100, custo: 6.5, custoProteina: 0.270 },
-            { id: 9, fonte: 'Ovo cozido', categoria: 'outros', proteina: 6.5, porcaoDesc: '1 unid', gPorUnidade: 50, custo: 0.6, custoProteina: 0.092 }, 
-            { id: 10, fonte: 'Clara de Ovo', categoria: 'outros', proteina: 3.5, porcaoDesc: '1 unid', gPorUnidade: 30, custo: 0.4, custoProteina: 0.11 },
-            { id: 11, fonte: 'Queijo Cottage', categoria: 'outros', proteina: 12, porcaoDesc: '100g', gPorUnidade: 100, custo: 3.5, custoProteina: 0.291 },
-            { id: 12, fonte: 'Whey Protein', categoria: 'suplemento', proteina: 24, porcaoDesc: '1 Scoop', gPorUnidade: 30, custo: 3.5, custoProteina: 0.145 },
-            { id: 13, fonte: 'Barra Proteína', categoria: 'suplemento', proteina: 12, porcaoDesc: '1 unid', gPorUnidade: 40, custo: 8.0, custoProteina: 0.666 },
-            { id: 14, fonte: 'Iogurte Proteico', categoria: 'outros', proteina: 14, porcaoDesc: '1 unid', gPorUnidade: 200, custo: 5.0, custoProteina: 0.35 }
+            { id: 1, fonte: 'Patinho bovino', categoria: 'carne', proteina: 35, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 4.5, custoProteina: 0.128 },
+            { id: 2, fonte: 'Filé mignon', categoria: 'carne', proteina: 33, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 8.0, custoProteina: 0.242 },
+            { id: 3, fonte: 'Contra-filé', categoria: 'carne', proteina: 32, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 6.0, custoProteina: 0.187 },
+            { id: 4, fonte: 'Miolo alcatra', categoria: 'carne', proteina: 33, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 5.5, custoProteina: 0.166 },
+            { id: 5, fonte: 'Peito frango (Grelh.)', categoria: 'frango', proteina: 32, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 1.5, custoProteina: 0.046 },
+            { id: 6, fonte: 'Coxa frango', categoria: 'frango', proteina: 27, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 1.2, custoProteina: 0.044 },
+            { id: 7, fonte: 'Tilápia', categoria: 'peixe', proteina: 26, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 5.0, custoProteina: 0.192 },
+            { id: 8, fonte: 'Atum enlatado', categoria: 'peixe', proteina: 24, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 6.5, custoProteina: 0.270 },
+            
+            // Unidades Especiais
+            { id: 9, fonte: 'Ovo cozido', categoria: 'outros', proteina: 6.5, porcaoDesc: '1 unid', gPorUnidade: 50, unitType: 'unidade', custo: 0.6, custoProteina: 0.092 }, 
+            { id: 10, fonte: 'Clara de Ovo', categoria: 'outros', proteina: 3.5, porcaoDesc: '1 unid', gPorUnidade: 30, unitType: 'unidade', custo: 0.4, custoProteina: 0.11 },
+            { id: 11, fonte: 'Queijo Cottage', categoria: 'outros', proteina: 12, porcaoDesc: '100g', gPorUnidade: 30, unitType: 'colher', custo: 3.5, custoProteina: 0.291 }, // 30g = 1 colher sopa
+            { id: 12, fonte: 'Whey Protein', categoria: 'suplemento', proteina: 24, porcaoDesc: '1 Scoop', gPorUnidade: 30, unitType: 'scoop', custo: 3.5, custoProteina: 0.145 },
+            { id: 13, fonte: 'Barra Proteína', categoria: 'suplemento', proteina: 12, porcaoDesc: '1 unid', gPorUnidade: 40, unitType: 'unidade', custo: 8.0, custoProteina: 0.666 },
+            { id: 14, fonte: 'Iogurte Proteico', categoria: 'outros', proteina: 14, porcaoDesc: '1 unid', gPorUnidade: 200, unitType: 'unidade', custo: 5.0, custoProteina: 0.35 }
         ];
 
-        // Configuração das Refeições
         const mealsConfig = [
             { key: 'cafe', label: '☕ Café da Manhã', weight: 0.15 },
             { key: 'lancheManha', label: '🍎 Lanche Manhã', weight: 0.10 },
@@ -280,65 +308,74 @@
             { key: 'ceia', label: '🌙 Ceia', weight: 0.10 }
         ];
 
-        // --- ESTADO DA APP ---
-        let currentTab = 'fontes';
         let filtroCategoriaAtual = '';
         let ordenacaoAtual = 'custoProteina';
-        
-        // --- FUNÇÕES GERAIS ---
+        let currentTheme = 'light';
+
+        // --- GLOBAL & THEME ---
         function atualizarGlobal() {
             const peso = parseFloat(document.getElementById('pesoUsuario').value);
             const display = document.getElementById('metaProteinaDisplay');
             if (peso && peso > 30) {
-                const meta = (peso * 2.0).toFixed(0); // Meta fixa em 2.0g/kg para simplificar cálculo
+                const meta = (peso * 2.0).toFixed(0);
                 display.innerText = meta;
-                display.style.color = 'var(--color-primary)';
             } else {
                 display.innerText = '-';
             }
         }
 
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+
         function switchTab(tabName) {
-            // Atualiza botões
             document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
-            // Atualiza conteúdo
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
         }
 
-        // --- LÓGICA DA TABELA (ABA 1) ---
+        // --- ABA 1: TABELA ---
         function renderizarTabela() {
             const tbody = document.getElementById('tbody');
             tbody.innerHTML = '';
             
+            // Filtra primeiro
             let data = dados.filter(d => filtroCategoriaAtual === '' || d.categoria === filtroCategoriaAtual);
             
-            // Ordenação Simples
+            // Atualiza os Stats COM BASE NO FILTRO
+            atualizarStatsDinamicos(data);
+
+            // Ordena
             data.sort((a, b) => a[ordenacaoAtual] - b[ordenacaoAtual]);
 
             data.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><b>${item.fonte}</b><br><small style="color:#666">${item.categoria}</small></td>
+                    <td><b>${item.fonte}</b><br><small style="opacity:0.7">${item.categoria}</small></td>
                     <td class="text-good">${item.proteina}g</td>
                     <td style="font-size:11px">${item.porcaoDesc}</td>
                     <td class="text-price">R$ ${item.custoProteina.toFixed(2)}</td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
 
-            // Atualiza Cards
-            const melhor = Math.min(...dados.map(d => d.custoProteina));
-            const maior = Math.max(...dados.map(d => d.proteina));
+        function atualizarStatsDinamicos(dataFiltered) {
+            if (dataFiltered.length === 0) {
+                document.getElementById('cheapest').innerText = '-';
+                document.getElementById('best-protein').innerText = '-';
+                return;
+            }
+            const melhor = Math.min(...dataFiltered.map(d => d.custoProteina));
+            const maior = Math.max(...dataFiltered.map(d => d.proteina));
             document.getElementById('cheapest').innerText = `R$ ${melhor.toFixed(2)}`;
             document.getElementById('best-protein').innerText = `${maior}g`;
         }
 
         function filtrarCategoria(cat) {
             filtroCategoriaAtual = cat;
-            // Atualiza UI dos botões
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
             renderizarTabela();
@@ -363,20 +400,20 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // --- LÓGICA DO PLANEJADOR (ABA 2) ---
+        // --- ABA 2: PLANEJADOR ---
         function initPlanner() {
             const container = document.getElementById('planner-container');
-            
-            // Cria os selects com as opções de comida
-            const foodOptions = `<option value="">-- Nada --</option>` + 
+            const foodOptions = `<option value="">-- Selecione --</option>` + 
                 dados.map(d => `<option value="${d.id}">${d.fonte} (${d.proteina}g prot)</option>`).join('');
 
             mealsConfig.forEach(meal => {
                 const card = document.createElement('div');
                 card.className = 'meal-card';
+                // Cria 3 selects por refeição
                 card.innerHTML = `
                     <div class="meal-title">${meal.label}</div>
                     <div class="meal-selects">
+                        <select class="food-select" data-meal="${meal.key}">${foodOptions}</select>
                         <select class="food-select" data-meal="${meal.key}">${foodOptions}</select>
                         <select class="food-select" data-meal="${meal.key}">${foodOptions}</select>
                     </div>
@@ -387,96 +424,94 @@
 
         function calcularDieta() {
             const peso = parseFloat(document.getElementById('pesoUsuario').value);
-            if (!peso || peso < 30) { alert('Por favor, preencha seu peso corretamente no topo da página.'); return; }
+            if (!peso || peso < 30) { alert('Preencha seu peso no topo.'); return; }
 
-            const metaTotal = peso * 2.0; // 2.0g/kg
-            let textoResultado = `🎯 *Meta Diária:* ${metaTotal.toFixed(0)}g de proteína\n\n`;
+            const metaTotal = peso * 2.0; 
+            let textoResultado = `🎯 *Meta:* ${metaTotal.toFixed(0)}g proteína/dia\n\n`;
 
-            // 1. Identificar quais refeições têm comida selecionada
+            // Identifica refeições ativas e soma pesos
             let activeMealsWeightSum = 0;
             const selects = document.querySelectorAll('.food-select');
-            const userSelections = {}; // Mapa: mealKey -> [foodId, foodId]
+            const userSelections = {}; 
 
             selects.forEach(sel => {
                 const mealKey = sel.dataset.meal;
                 if (!userSelections[mealKey]) userSelections[mealKey] = [];
-                if (sel.value) {
-                    userSelections[mealKey].push(parseInt(sel.value));
-                }
+                if (sel.value) userSelections[mealKey].push(parseInt(sel.value));
             });
 
-            // Soma os pesos APENAS das refeições que têm algo selecionado
             mealsConfig.forEach(meal => {
                 if (userSelections[meal.key] && userSelections[meal.key].length > 0) {
                     activeMealsWeightSum += meal.weight;
                 }
             });
 
-            if (activeMealsWeightSum === 0) {
-                alert("Selecione pelo menos um alimento em alguma refeição.");
-                return;
-            }
+            if (activeMealsWeightSum === 0) { alert("Selecione alimentos."); return; }
 
-            // 2. Calcular e Gerar Texto
+            // Calcula
             mealsConfig.forEach(meal => {
                 const foods = userSelections[meal.key];
                 
                 if (foods && foods.length > 0) {
-                    // Quanto de proteína essa refeição precisa ter?
-                    // Regra de 3: Se a soma dos pesos ativos é 100% da meta...
-                    // meal.weight representa X% dessa meta ajustada
                     const mealShare = meal.weight / activeMealsWeightSum;
                     const mealTargetProt = metaTotal * mealShare;
-                    
-                    // Divide a meta da refeição pelo número de alimentos selecionados nela
                     const targetPerFood = mealTargetProt / foods.length;
 
-                    textoResultado += `*${meal.label}* (Meta: ~${mealTargetProt.toFixed(0)}g prot)\n`;
+                    textoResultado += `*${meal.label}* (~${mealTargetProt.toFixed(0)}g prot)\n`;
 
                     foods.forEach(foodId => {
                         const foodData = dados.find(d => d.id === foodId);
                         
-                        // Cálculo Inverso: Quantos gramas de comida para atingir a proteina alvo?
-                        // Ex: Preciso de 15g. Frango tem 32g em 100g.
-                        // (15 * 100) / 32 = 46.8g de frango
-                        let qtdAlimento = (targetPerFood * foodData.gPorUnidade) / foodData.proteina;
+                        // Cálculo: Gramas totais necessárias do alimento
+                        let gramsNeeded = (targetPerFood * foodData.gPorUnidade) / foodData.proteina;
                         
-                        // Arredondamento inteligente
-                        if (foodData.porcaoDesc.includes('unid') || foodData.porcaoDesc.includes('Scoop')) {
-                            // Se for unidade, arredonda para 0.5 mais próximo ou inteiro
-                            let qtdUnitaria = qtdAlimento / foodData.gPorUnidade; 
-                            textoResultado += `👉 ${foodData.fonte}: ${qtdUnitaria.toFixed(1)} unid/scoop\n`;
+                        // Lógica de Apresentação por Unidade
+                        let displayQty = '';
+                        
+                        if (foodData.unitType === 'colher') {
+                            // Cottage: gPorUnidade é 30g
+                            let colheres = gramsNeeded / foodData.gPorUnidade;
+                            displayQty = `${colheres.toFixed(1)} colheres sopa`;
+                        
+                        } else if (foodData.unitType === 'unidade' || foodData.unitType === 'scoop') {
+                            let units = gramsNeeded / foodData.gPorUnidade;
+                            // Arredonda para 0.5 mais próximo
+                            let unitsRounded = (Math.round(units * 2) / 2).toFixed(1);
+                            // Remove .0 se for inteiro
+                            if (unitsRounded.endsWith('.0')) unitsRounded = unitsRounded.replace('.0', '');
+                            
+                            let label = foodData.unitType === 'scoop' ? 'scoops' : 'unid';
+                            displayQty = `${unitsRounded} ${label}`;
+                        
                         } else {
-                            // Se for gramas
-                            textoResultado += `👉 ${foodData.fonte}: ${qtdAlimento.toFixed(0)}g\n`;
+                            // Gramas (Padrão)
+                            displayQty = `${gramsNeeded.toFixed(0)}g`;
+                            
+                            // Aviso do Atum (>40g)
+                            if (foodData.fonte.includes('Atum') && gramsNeeded > 45) {
+                                displayQty += ` ⚠️ (Alto! Divida a fonte)`;
+                            }
                         }
+
+                        textoResultado += `👉 ${foodData.fonte}: ${displayQty}\n`;
                     });
                     textoResultado += `----------------\n`;
                 }
             });
 
             const resultDiv = document.getElementById('result-area');
-            const resultTextDiv = document.getElementById('plan-text');
-            
-            resultTextDiv.innerText = textoResultado;
+            document.getElementById('plan-text').innerText = textoResultado;
             resultDiv.style.display = 'block';
-            
-            // Salva na variável global para o botão do whats
             window.ultimoPlanejamento = textoResultado;
-            
-            // Scroll suave até o resultado
             resultDiv.scrollIntoView({ behavior: 'smooth' });
         }
 
         function compartilharDietaZap() {
             if (!window.ultimoPlanejamento) return;
-            const header = "🥦 *Meu Planejamento de Proteína*\nGerado por Proteína Eficiente App\n\n";
-            const link = "\nCrie o seu em: " + window.location.href;
-            const fullText = header + window.ultimoPlanejamento + link;
+            const fullText = "🥦 *Planejamento Proteico*\n\n" + window.ultimoPlanejamento + "\nGerado em: " + window.location.href;
             window.open(`https://wa.me/?text=${encodeURIComponent(fullText)}`, '_blank');
         }
 
-        // Inicialização
         renderizarTabela();
         initPlanner();
 
