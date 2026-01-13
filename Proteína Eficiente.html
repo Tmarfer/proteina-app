@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proteína Eficiente</title>
+    <style>
+        :root {
+            --color-primary: #25d366;
+            --color-text: #111;
+            --color-bg: #fff;
+            --color-surface: #f0f0f0;
+            --color-border: #e5e5ea;
+            --color-good: #34c759;
+            --color-warning: #ff9500;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            padding: 16px;
+            line-height: 1.5;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+            color: var(--color-primary);
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn, .filter-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 200ms;
+        }
+
+        .sort-btn:active, .filter-btn:active, .sort-btn.active, .filter-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .sort-btn:hover, .filter-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: var(--color-surface);
+            font-weight: 600;
+        }
+
+        th {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        th:hover {
+            background: #e8e8e8;
+        }
+
+        th .arrow {
+            font-size: 10px;
+            margin-left: 4px;
+            opacity: 0.5;
+        }
+
+        th .arrow.active {
+            opacity: 1;
+        }
+
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .fonte-name {
+            font-weight: 500;
+            color: var(--color-text);
+            min-width: 140px;
+        }
+
+        .proteina {
+            color: var(--color-good);
+            font-weight: 600;
+        }
+
+        .custo-prot {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .best {
+            background: rgba(52, 199, 89, 0.1);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding: 12px;
+            background: var(--color-surface);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .share-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+            font-size: 14px;
+            transition: background 200ms;
+        }
+
+        .share-btn:active {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 6px;
+            }
+
+            .fonte-name {
+                min-width: 100px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🥇 Proteína Eficiente</h1>
+        <p>Melhor custo-benefício de proteína</p>
+    </div>
+
+    <button class="share-btn" onclick="compartilharWhatsApp()">📲 Compartilhar no WhatsApp</button>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-label">Mais Barato</div>
+            <div class="stat-value" id="cheapest">R$ —</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Mais Proteína</div>
+            <div class="stat-value" id="best-protein">— g</div>
+        </div>
+    </div>
+
+    <input type="text" class="search-box" id="searchInput" placeholder="🔍 Buscar proteína..." onkeyup="filtrarTabela()">
+
+    <div class="controls">
+        <button class="sort-btn" onclick="ordenar('fonte')">Fonte A→Z</button>
+        <button class="sort-btn active" onclick="ordenar('custoProteina')">Melhor Custo ⬇️</button>
+        <button class="sort-btn" onclick="ordenar('proteina')">Proteína ⬇️</button>
+        <button class="filter-btn" onclick="filtrarCategoria('carne')">🍖 Carne</button>
+        <button class="filter-btn" onclick="filtrarCategoria('frango')">🍗 Frango</button>
+        <button class="filter-btn" onclick="filtrarCategoria('peixe')">🐟 Peixe</button>
+        <button class="filter-btn" onclick="filtrarCategoria('outros')">🥚 Outros</button>
+        <button class="filter-btn" onclick="filtrarCategoria('')">Ver Tudo</button>
+    </div>
+
+    <div class="table-container">
+        <table id="tabelaProteina">
+            <thead>
+                <tr>
+                    <th onclick="ordenar('fonte')">Fonte <span class="arrow"></span></th>
+                    <th onclick="ordenar('proteina')">Proteína <span class="arrow"></span></th>
+                    <th onclick="ordenar('custo')">Custo <span class="arrow"></span></th>
+                    <th onclick="ordenar('custoProteina')">R$/g Prot. <span class="arrow active">⬇</span></th>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>💡 Dica: Coxa de frango é o melhor custo-benefício geral</p>
+        <p>Últimas atualização: jan/2026</p>
+    </div>
+
+    <script>
+        const dados = [
+            { fonte: 'Patinho bovino', categoria: 'carne', proteina: 35, custo: 4.5, custoProteina: 0.013 },
+            { fonte: 'Filé mignon', categoria: 'carne', proteina: 33, custo: 8.0, custoProteina: 0.024 },
+            { fonte: 'Contra-filé', categoria: 'carne', proteina: 32, custo: 6.0, custoProteina: 0.019 },
+            { fonte: 'Miolo alcatra', categoria: 'carne', proteina: 33, custo: 5.5, custoProteina: 0.017 },
+            { fonte: 'Maminha', categoria: 'carne', proteina: 31, custo: 5.0, custoProteina: 0.016 },
+            { fonte: 'Lagarto', categoria: 'carne', proteina: 33, custo: 5.0, custoProteina: 0.015 },
+            { fonte: 'Coxão mole', categoria: 'carne', proteina: 32, custo: 5.0, custoProteina: 0.016 },
+            { fonte: 'Peito frango', categoria: 'frango', proteina: 32, custo: 1.5, custoProteina: 0.005 },
+            { fonte: 'Coxa frango', categoria: 'frango', proteina: 27, custo: 1.2, custoProteina: 0.004 },
+            { fonte: 'Coxinha da asa', categoria: 'frango', proteina: 19, custo: 1.5, custoProteina: 0.008 },
+            { fonte: 'Tilápia', categoria: 'peixe', proteina: 26, custo: 5.0, custoProteina: 0.019 },
+            { fonte: 'Atum enlatado natural', categoria: 'peixe', proteina: 24, custo: 4.7, custoProteina: 0.020 },
+            { fonte: 'Ovo inteiro cozido', categoria: 'outros', proteina: 13, custo: 1.0, custoProteina: 0.008 },
+            { fonte: 'Queijo cottage magro', categoria: 'outros', proteina: 12, custo: 2.5, custoProteina: 0.021 }
+        ];
+
+        let filtroAtual = '';
+        let ordenacaoAtual = 'custoProteina';
+        let direcaoOrdenacao = 'asc';
+
+        function renderizarTabela(dataToRender = dados) {
+            const tbody = document.getElementById('tbody');
+            tbody.innerHTML = '';
+            
+            dataToRender.forEach((item, index) => {
+                const row = document.createElement('tr');
+                if (index === 0) row.classList.add('best');
+                
+                row.innerHTML = `
+                    <td class="fonte-name">${item.fonte}</td>
+                    <td class="proteina">${item.proteina}g</td>
+                    <td>R$ ${item.custo.toFixed(1)}</td>
+                    <td class="custo-prot">R$ ${item.custoProteina.toFixed(3)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            atualizarStats(dataToRender);
+        }
+
+        function ordenar(campo) {
+            if (ordenacaoAtual === campo) {
+                direcaoOrdenacao = direcaoOrdenacao === 'asc' ? 'desc' : 'asc';
+            } else {
+                ordenacaoAtual = campo;
+                direcaoOrdenacao = 'asc';
+            }
+
+            const dataFiltrada = dados.filter(item => 
+                filtroAtual === '' || item.categoria === filtroAtual
+            );
+
+            dataFiltrada.sort((a, b) => {
+                let valA = a[campo];
+                let valB = b[campo];
+
+                if (typeof valA === 'string') {
+                    return direcaoOrdenacao === 'asc' 
+                        ? valA.localeCompare(valB) 
+                        : valB.localeCompare(valA);
+                }
+
+                return direcaoOrdenacao === 'asc' 
+                    ? valA - valB 
+                    : valB - valA;
+            });
+
+            renderizarTabela(dataFiltrada);
+            atualizarArrows(campo);
+        }
+
+        function atualizarArrows(campo) {
+            document.querySelectorAll('th .arrow').forEach(arrow => {
+                arrow.classList.remove('active');
+                arrow.textContent = '';
+            });
+
+            const headers = document.querySelectorAll('th');
+            headers.forEach(th => {
+                if (th.textContent.toLowerCase().includes(campo === 'fonte' ? 'fonte' : 
+                    campo === 'proteina' ? 'proteína' :
+                    campo === 'custo' ? 'custo' : 'r$/g')) {
+                    const arrow = th.querySelector('.arrow');
+                    arrow.classList.add('active');
+                    arrow.textContent = direcaoOrdenacao === 'asc' ? '⬇' : '⬆';
+                }
+            });
+        }
+
+        function filtrarCategoria(categoria) {
+            filtroAtual = categoria;
+            ordenar(ordenacaoAtual);
+        }
+
+        function filtrarTabela() {
+            const termo = document.getElementById('searchInput').value.toLowerCase();
+            const dataFiltrada = dados.filter(item =>
+                item.fonte.toLowerCase().includes(termo) &&
+                (filtroAtual === '' || item.categoria === filtroAtual)
+            );
+
+            dataFiltrada.sort((a, b) => {
+                let valA = a[ordenacaoAtual];
+                let valB = b[ordenacaoAtual];
+                return direcaoOrdenacao === 'asc' ? valA - valB : valB - valA;
+            });
+
+            renderizarTabela(dataFiltrada);
+        }
+
+        function atualizarStats(dataToRender) {
+            const melhorCusto = Math.min(...dataToRender.map(d => d.custoProteina));
+            const maiorProteina = Math.max(...dataToRender.map(d => d.proteina));
+
+            document.getElementById('cheapest').textContent = `R$ ${melhorCusto.toFixed(3)}`;
+            document.getElementById('best-protein').textContent = `${maiorProteina}g`;
+        }
+
+        function compartilharWhatsApp() {
+            const mensa = encodeURIComponent(
+                '🥇 *Proteína Eficiente*\n\n' +
+                'Top 5 Melhor Custo-Benefício:\n\n' +
+                '1️⃣ Coxa frango: R$0,004/g\n' +
+                '2️⃣ Peito frango: R$0,005/g\n' +
+                '3️⃣ Ovo: R$0,008/g\n' +
+                '4️⃣ Lagarto: R$0,015/g\n' +
+                '5️⃣ Maminha: R$0,016/g\n\n' +
+                '💪 Proteína completa: coxa frango em destaque!\n\n' +
+                'Acesse a tabela completa aqui 👇'
+            );
+            window.open(`https://wa.me/?text=${mensa}`, '_blank');
+        }
+
+        // Inicializar
+        renderizarTabela();
+        atualizarArrows('custoProteina');
+    </script>
+</body>
+</html>
