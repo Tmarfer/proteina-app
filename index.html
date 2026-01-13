@@ -248,11 +248,11 @@
 
     <div class="stats">
         <div class="stat-card">
-            <div class="stat-label">Mais Barato</div>
+            <div class="stat-label">Mais Barato<br/><small>(R$/g Prot.)</small></div>
             <div class="stat-value" id="cheapest">R$ —</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Mais Proteína</div>
+            <div class="stat-label">Mais Proteína<br/><small>(g/100g)</small></div>
             <div class="stat-value" id="best-protein">— g</div>
         </div>
     </div>
@@ -422,7 +422,7 @@
                 '💪 Proteína completa: coxa frango em destaque!\n\n' +
                 'Acesse a tabela completa aqui 👇'
             );
-            window.open(`https://wa.me/?text=${mensa}`, '_blank');
+            window.open(`https://wa.me/?text=${encodeURIComponent(mensa + '\n\n' + location.href)}}`, '_blank');
         }
 
         // Inicializar
