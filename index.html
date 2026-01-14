@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -170,15 +170,6 @@
         }
         .plan-result h3 { color: var(--primary-dark); margin-bottom: 10px; }
         .plan-list { font-size: 14px; white-space: pre-line; color: var(--text); }
-        .alert-box {
-            font-size: 12px;
-            background: var(--warning-bg);
-            color: var(--warning-text);
-            padding: 8px;
-            border-radius: 6px;
-            margin-top: 5px;
-            display: inline-block;
-        }
 
         /* Botões */
         .btn-action {
@@ -277,7 +268,7 @@
     <div id="tab-planejamento" class="tab-content">
         <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 15px; text-align: center;">
             Selecione até 3 fontes por refeição.
-            <br>Limites: Atum (máx 45g) e Cottage (máx 3 col).
+            <br>Limites: Atum (máx 45g) e Cottage (máx 2 col).
         </p>
 
         <div class="meal-container" id="planner-container">
@@ -326,7 +317,7 @@
 
         let filtroCategoriaAtual = '';
         let ordenacaoAtual = 'custoProteina';
-        let currentTheme = 'light';
+        let currentTheme = 'dark'; // Padrão Escuro
 
         // --- GLOBAL & THEME ---
         function atualizarGlobal() {
@@ -437,7 +428,7 @@
             if (!peso || peso < 30) { alert('Preencha seu peso no topo.'); return; }
 
             const metaTotal = peso * 2.0; 
-            let textoResultado = `🎯 *Meta:* ${metaTotal.toFixed(0)}g proteína/dia\n\n`;
+            let textoResultado = `🎯 *Meta Diária:* ${metaTotal.toFixed(0)}g proteína\n\n`;
 
             // 1. Coleta seleções
             let activeMealsWeightSum = 0;
@@ -458,31 +449,48 @@
 
             if (activeMealsWeightSum === 0) { alert("Selecione alimentos."); return; }
 
-            // 2. Cálculo
+            // 2. Cálculo com "Rolling Deficit" (Déficit Acumulado)
+            let rollingDeficit = 0;
+            let totalGlobalOfertado = 0;
+
             mealsConfig.forEach(meal => {
                 const foodIds = userSelections[meal.key];
                 
                 if (foodIds && foodIds.length > 0) {
                     const mealShare = meal.weight / activeMealsWeightSum;
-                    let mealTargetProt = metaTotal * mealShare;
+                    // Meta desta refeição + o que ficou devendo da anterior
+                    let mealTargetProt = (metaTotal * mealShare) + rollingDeficit;
+                    
+                    // Reseta déficit para recalculá-lo se sobrar de novo
+                    rollingDeficit = 0; 
+
                     let plannedItems = [];
 
-                    // PASSO 1: Calcular quantidade ideal para cada item
-                    // Lógica simplificada: Divide a meta igualmente entre os itens selecionados
+                    // PASSO 1: Divisão inicial
                     let targetPerItem = mealTargetProt / foodIds.length;
 
                     foodIds.forEach(id => {
                         const food = dados.find(d => d.id === id);
-                        let gramsNeeded = (targetPerItem * food.gPorUnidade) / food.proteina;
+                        let proteinDensity = 0;
+
+                        // Cálculo da Densidade Proteica (g de prot por g de alimento)
+                        if (food.porcaoDesc.includes('100g')) {
+                            proteinDensity = food.proteina / 100;
+                        } else {
+                            proteinDensity = food.proteina / food.gPorUnidade;
+                        }
+
+                        // Quantos gramas do alimento para atingir a meta?
+                        let gramsNeeded = targetPerItem / proteinDensity;
                         
-                        // Aplicar Limites Rígidos
+                        // Aplicar Limites
                         let isCapped = false;
                         if (food.fonte.includes('Atum') && gramsNeeded > 45) {
                             gramsNeeded = 45;
                             isCapped = true;
                         }
-                        if (food.fonte.includes('Cottage') && gramsNeeded > 90) { // 3 colheres
-                            gramsNeeded = 90;
+                        if (food.fonte.includes('Cottage') && gramsNeeded > 60) { // Limite 2 colheres (60g)
+                            gramsNeeded = 60;
                             isCapped = true;
                         }
 
@@ -490,12 +498,12 @@
                         if (food.unitType === 'unidade' || food.unitType === 'scoop') {
                             let rawUnits = gramsNeeded / food.gPorUnidade;
                             let units = Math.round(rawUnits);
-                            if (units < 1) units = 1; // Mínimo 1 se selecionado
+                            if (units < 1) units = 1; 
                             gramsNeeded = units * food.gPorUnidade;
                         }
 
-                        // PASSO 2: Recalcular a proteína REAL entregue por essa quantidade
-                        let actualProt = (gramsNeeded * food.proteina) / food.gPorUnidade;
+                        // Proteína real entregue
+                        let actualProt = gramsNeeded * proteinDensity;
 
                         plannedItems.push({
                             food: food,
@@ -505,8 +513,17 @@
                         });
                     });
 
-                    // Somar o total REAL entregue
+                    // Verifica se faltou proteína nessa refeição (por causa de limites)
                     let totalActualProt = plannedItems.reduce((acc, item) => acc + item.actualProt, 0);
+                    
+                    if (totalActualProt < mealTargetProt) {
+                        // Se faltou, joga para a próxima refeição (Rolling Deficit)
+                        let diff = mealTargetProt - totalActualProt;
+                        // Só joga pra frente se diff for relevante (>1g)
+                        if (diff > 1) rollingDeficit = diff;
+                    }
+
+                    totalGlobalOfertado += totalActualProt;
 
                     // Gerar Texto
                     textoResultado += `*${meal.label}* (Ofertado: ${totalActualProt.toFixed(0)}g / Meta: ${mealTargetProt.toFixed(0)}g)\n`;
@@ -518,11 +535,11 @@
                         if (foodData.unitType === 'unidade' || foodData.unitType === 'scoop') {
                             let units = item.grams / foodData.gPorUnidade;
                             let label = foodData.unitType === 'scoop' ? 'scoops' : 'unid';
-                            displayQty = `${units.toFixed(0)} ${label}`; // Inteiro forçado
+                            displayQty = `${units.toFixed(0)} ${label}`; 
                         
                         } else if (foodData.unitType === 'colher') {
                             let colheres = item.grams / foodData.gPorUnidade;
-                            // Arredonda cottage para .5
+                            // Cottage arredonda pra 0.5
                             let colRounded = (Math.round(colheres * 2) / 2).toFixed(1).replace('.0','');
                             displayQty = `${colRounded} colheres (${item.grams.toFixed(0)}g)`;
                         
@@ -531,12 +548,22 @@
                         }
 
                         let warn = item.isCapped ? ' ⚠️ (Limite máx)' : '';
-                        // Mostra a proteína real do item para clareza
                         textoResultado += `👉 ${foodData.fonte}: ${displayQty}${warn}\n`;
                     });
                     textoResultado += `----------------\n`;
                 }
             });
+
+            // Resumo Final
+            textoResultado += `\n📊 *Resumo Final:*\n`;
+            textoResultado += `Total Ofertado: ${totalGlobalOfertado.toFixed(0)}g\n`;
+            textoResultado += `Meta Diária: ${metaTotal.toFixed(0)}g\n`;
+            
+            if (totalGlobalOfertado >= metaTotal) {
+                textoResultado += `✅ Meta Batida com Sucesso!`;
+            } else {
+                textoResultado += `⚠️ Faltou um pouquinho. Tente adicionar mais fontes.`;
+            }
 
             const resultDiv = document.getElementById('result-area');
             document.getElementById('plan-text').innerText = textoResultado;
