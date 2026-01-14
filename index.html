@@ -16,6 +16,8 @@
             --border: #e5e5ea;
             --good: #34c759;
             --highlight: #e8f5e9;
+            --warning-bg: #fff3cd;
+            --warning-text: #856404;
         }
 
         :root[data-theme="dark"] {
@@ -28,6 +30,8 @@
             --border: #333;
             --good: #4ade80;
             --highlight: #0f2e1b;
+            --warning-bg: #2c2505;
+            --warning-text: #dec564;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -166,6 +170,15 @@
         }
         .plan-result h3 { color: var(--primary-dark); margin-bottom: 10px; }
         .plan-list { font-size: 14px; white-space: pre-line; color: var(--text); }
+        .alert-box {
+            font-size: 12px;
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 5px;
+            display: inline-block;
+        }
 
         /* Botões */
         .btn-action {
@@ -263,7 +276,8 @@
 
     <div id="tab-planejamento" class="tab-content">
         <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 15px; text-align: center;">
-            Selecione até 3 fontes por refeição. O app distribui a meta e respeita limites (ex: máx 45g de atum).
+            Selecione até 3 fontes por refeição.
+            <br>Limites: Atum (máx 45g) e Cottage (máx 3 col).
         </p>
 
         <div class="meal-container" id="planner-container">
@@ -282,8 +296,6 @@
 
     <script>
         // --- DADOS ---
-        // unitType: 'gramas', 'unidade', 'colher', 'scoop'
-        // gPorUnidade: Peso base. Se for colher, é ~30g. Se for scoop, ~30g. Ovo, ~50g.
         const dados = [
             { id: 1, fonte: 'Patinho bovino', categoria: 'carne', proteina: 35, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 4.5, custoProteina: 0.128 },
             { id: 2, fonte: 'Filé mignon', categoria: 'carne', proteina: 33, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 8.0, custoProteina: 0.242 },
@@ -427,7 +439,7 @@
             const metaTotal = peso * 2.0; 
             let textoResultado = `🎯 *Meta:* ${metaTotal.toFixed(0)}g proteína/dia\n\n`;
 
-            // 1. Identifica refeições ativas e soma pesos
+            // 1. Coleta seleções
             let activeMealsWeightSum = 0;
             const selects = document.querySelectorAll('.food-select');
             const userSelections = {}; 
@@ -446,120 +458,81 @@
 
             if (activeMealsWeightSum === 0) { alert("Selecione alimentos."); return; }
 
-            // 2. Cálculo inteligente com redistribuição
+            // 2. Cálculo
             mealsConfig.forEach(meal => {
                 const foodIds = userSelections[meal.key];
                 
                 if (foodIds && foodIds.length > 0) {
-                    // Meta de proteína para ESSA refeição
                     const mealShare = meal.weight / activeMealsWeightSum;
                     let mealTargetProt = metaTotal * mealShare;
-                    let itemsToCalculate = [];
+                    let plannedItems = [];
 
-                    // Passagem 1: Verificar Limites (Atum e Cottage)
-                    // Se houver itens limitados, subtraímos a proteína máxima deles da meta
-                    // e deixamos o resto para os outros itens.
-                    
-                    let proteinProvidedByLimited = 0;
-                    let limitedItems = [];
-                    let unlimitedItems = [];
+                    // PASSO 1: Calcular quantidade ideal para cada item
+                    // Lógica simplificada: Divide a meta igualmente entre os itens selecionados
+                    let targetPerItem = mealTargetProt / foodIds.length;
 
                     foodIds.forEach(id => {
                         const food = dados.find(d => d.id === id);
-                        let isLimited = false;
-                        let limitGrams = 0;
+                        let gramsNeeded = (targetPerItem * food.gPorUnidade) / food.proteina;
+                        
+                        // Aplicar Limites Rígidos
+                        let isCapped = false;
+                        if (food.fonte.includes('Atum') && gramsNeeded > 45) {
+                            gramsNeeded = 45;
+                            isCapped = true;
+                        }
+                        if (food.fonte.includes('Cottage') && gramsNeeded > 90) { // 3 colheres
+                            gramsNeeded = 90;
+                            isCapped = true;
+                        }
 
-                        // Verifica Atum (Limitado a 45g)
-                        if (food.fonte.includes('Atum')) {
-                            isLimited = true;
-                            limitGrams = 45;
-                        }
-                        // Verifica Cottage (Limitado a 3 colheres = 90g)
-                        if (food.fonte.includes('Cottage')) {
-                            isLimited = true;
-                            limitGrams = 90; // 3 * 30g
+                        // Aplicar Arredondamento (Inteiros para unidades/scoops)
+                        if (food.unitType === 'unidade' || food.unitType === 'scoop') {
+                            let rawUnits = gramsNeeded / food.gPorUnidade;
+                            let units = Math.round(rawUnits);
+                            if (units < 1) units = 1; // Mínimo 1 se selecionado
+                            gramsNeeded = units * food.gPorUnidade;
                         }
 
-                        if (isLimited) {
-                            // Calcula quanto de proteina esse limite dá
-                            let protFromLimit = (limitGrams * food.proteina) / food.gPorUnidade;
-                            proteinProvidedByLimited += protFromLimit;
-                            limitedItems.push({ food: food, grams: limitGrams, fixed: true });
-                        } else {
-                            unlimitedItems.push({ food: food });
-                        }
+                        // PASSO 2: Recalcular a proteína REAL entregue por essa quantidade
+                        let actualProt = (gramsNeeded * food.proteina) / food.gPorUnidade;
+
+                        plannedItems.push({
+                            food: food,
+                            grams: gramsNeeded,
+                            actualProt: actualProt,
+                            isCapped: isCapped
+                        });
                     });
 
-                    // Verifica se a divisão "justa" estoura o limite. 
-                    // Para simplificar: Se tem item limitado, travamos ele no máximo (ou menos se a meta for pequena) 
-                    // e jogamos o resto pro ilimitado.
-                    // Se só tiver item limitado, ele vai ficar no limite (e a meta pode não ser batida nessa refeição, o que é OK p/ segurança).
+                    // Somar o total REAL entregue
+                    let totalActualProt = plannedItems.reduce((acc, item) => acc + item.actualProt, 0);
 
-                    let remainingTarget = mealTargetProt;
-                    let finalItems = [];
+                    // Gerar Texto
+                    textoResultado += `*${meal.label}* (Ofertado: ${totalActualProt.toFixed(0)}g / Meta: ${mealTargetProt.toFixed(0)}g)\n`;
 
-                    // Se temos ilimitados, eles absorvem o impacto.
-                    if (unlimitedItems.length > 0) {
-                        // Trava os limitados no máximo e desconta da meta
-                        limitedItems.forEach(item => {
-                            finalItems.push(item); // Já tem .grams definido no max
-                            remainingTarget -= ((item.grams * item.food.proteina) / item.food.gPorUnidade);
-                        });
-                        if (remainingTarget < 0) remainingTarget = 0;
-
-                        // Distribui o resto para os ilimitados
-                        let targetPerUnlimited = remainingTarget / unlimitedItems.length;
-                        unlimitedItems.forEach(item => {
-                            let gramsNeeded = (targetPerUnlimited * item.food.gPorUnidade) / item.food.proteina;
-                            finalItems.push({ food: item.food, grams: gramsNeeded, fixed: false });
-                        });
-
-                    } else {
-                        // Só tem limitados ou nenhum limitado. Divide igual, mas aplica teto.
-                        let targetPerFood = mealTargetProt / foodIds.length;
-                        foodIds.forEach(id => {
-                             const food = dados.find(d => d.id === id);
-                             let gramsNeeded = (targetPerFood * food.gPorUnidade) / food.proteina;
-                             
-                             // Aplica teto se necessário
-                             if (food.fonte.includes('Atum') && gramsNeeded > 45) gramsNeeded = 45;
-                             if (food.fonte.includes('Cottage') && gramsNeeded > 90) gramsNeeded = 90;
-
-                             finalItems.push({ food: food, grams: gramsNeeded });
-                        });
-                    }
-
-                    // Geração do Texto
-                    textoResultado += `*${meal.label}* (~${mealTargetProt.toFixed(0)}g prot)\n`;
-
-                    finalItems.forEach(item => {
-                        let foodData = item.food;
-                        let grams = item.grams;
+                    plannedItems.forEach(item => {
                         let displayQty = '';
+                        const foodData = item.food;
 
-                        // Lógica de Arredondamento para Inteiros (Whey, Ovo, Barra, etc)
                         if (foodData.unitType === 'unidade' || foodData.unitType === 'scoop') {
-                            let units = grams / foodData.gPorUnidade;
-                            // Arredonda para inteiro (mínimo 1 se foi selecionado)
-                            let unitsInt = Math.round(units);
-                            if (unitsInt < 1) unitsInt = 1;
-                            
+                            let units = item.grams / foodData.gPorUnidade;
                             let label = foodData.unitType === 'scoop' ? 'scoops' : 'unid';
-                            displayQty = `${unitsInt} ${label}`;
+                            displayQty = `${units.toFixed(0)} ${label}`; // Inteiro forçado
                         
                         } else if (foodData.unitType === 'colher') {
-                            // Cottage: Travado em max 3 no passo anterior, mas vamos garantir na exibição
-                            let colheres = grams / foodData.gPorUnidade;
-                            // Arredonda para 0.5
-                            let colheresRounded = (Math.round(colheres * 2) / 2).toFixed(1).replace('.0','');
-                            displayQty = `${colheresRounded} colheres (${(colheresRounded*30).toFixed(0)}g)`;
-
+                            let colheres = item.grams / foodData.gPorUnidade;
+                            // Arredonda cottage para .5
+                            let colRounded = (Math.round(colheres * 2) / 2).toFixed(1).replace('.0','');
+                            displayQty = `${colRounded} colheres (${item.grams.toFixed(0)}g)`;
+                        
                         } else {
-                            // Gramas puro
-                            displayQty = `${grams.toFixed(0)}g`;
+                            displayQty = `${item.grams.toFixed(0)}g`;
                         }
 
-                        textoResultado += `👉 ${foodData.fonte}: ${displayQty}\n`;
+                        let warn = item.isCapped ? ' ⚠️ (Limite máx)' : '';
+                        // Mostra a proteína real do item para clareza
+                        textoResultado += `👉 ${foodData.fonte}: ${displayQty}${warn}\n`;
                     });
                     textoResultado += `----------------\n`;
                 }
