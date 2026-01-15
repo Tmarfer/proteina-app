@@ -174,7 +174,7 @@
             display: none;
         }
         .plan-result h3 { color: var(--primary-dark); margin-bottom: 10px; }
-        .plan-list { font-size: 14px; white-space: pre-line; color: var(--text); }
+        .plan-list { font-size: 14px; line-height: 1.6; color: var(--text); }
 
         /* Botões */
         .btn-action {
@@ -322,7 +322,7 @@
 
         let filtroCategoriaAtual = '';
         let ordenacaoAtual = 'custoProteina';
-        let direcaoOrdenacao = 'asc'; // 'asc' ou 'desc'
+        let direcaoOrdenacao = 'asc'; 
         let currentTheme = 'dark'; // Padrão Escuro
 
         // --- GLOBAL & THEME ---
@@ -357,11 +357,9 @@
             let data = dados.filter(d => filtroCategoriaAtual === '' || d.categoria === filtroCategoriaAtual);
             atualizarStatsDinamicos(data);
             
-            // Ordenação com Direção
             data.sort((a, b) => {
                 let valA = a[ordenacaoAtual];
                 let valB = b[ordenacaoAtual];
-
                 if (typeof valA === 'string') {
                     return direcaoOrdenacao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
                 }
@@ -402,10 +400,8 @@
 
         function ordenar(campo) {
             if (ordenacaoAtual === campo) {
-                // Inverte se clicar no mesmo
                 direcaoOrdenacao = direcaoOrdenacao === 'asc' ? 'desc' : 'asc';
             } else {
-                // Reseta se for novo
                 ordenacaoAtual = campo;
                 direcaoOrdenacao = 'asc';
             }
@@ -413,13 +409,11 @@
         }
 
         function atualizarSetas() {
-            // Limpa todas
             document.querySelectorAll('.arrow').forEach(a => {
                 a.textContent = '';
                 a.classList.remove('active');
             });
             
-            // Define o id do th baseado no campo
             const thId = 'th-' + ordenacaoAtual;
             const th = document.getElementById(thId);
             if (th) {
@@ -471,7 +465,9 @@
             if (!peso || peso < 30) { alert('Preencha seu peso no topo.'); return; }
 
             const metaTotal = peso * 2.0; 
-            let textoResultado = `🎯 *Meta Diária:* ${metaTotal.toFixed(0)}g proteína\n\n`;
+            
+            // Variável para armazenar o texto "sujo" (markdown) para o WhatsApp
+            let zapText = `🎯 *Meta Diária:* ${metaTotal.toFixed(0)}g proteína\n\n`;
 
             // 1. Coleta seleções
             let activeMealsWeightSum = 0;
@@ -492,7 +488,7 @@
 
             if (activeMealsWeightSum === 0) { alert("Selecione alimentos."); return; }
 
-            // 2. Cálculo com "Rolling Deficit" (Déficit Acumulado)
+            // 2. Cálculo com Rolling Deficit
             let rollingDeficit = 0;
             let totalGlobalOfertado = 0;
 
@@ -555,7 +551,8 @@
 
                     totalGlobalOfertado += totalActualProt;
 
-                    textoResultado += `*${meal.label}* (Ofertado: ${totalActualProt.toFixed(0)}g / Meta: ${mealTargetProt.toFixed(0)}g)\n`;
+                    // Constrói o texto do Zap (com Markdown)
+                    zapText += `*${meal.label}* (Ofertado: ${totalActualProt.toFixed(0)}g / Meta: ${mealTargetProt.toFixed(0)}g)\n`;
 
                     plannedItems.forEach(item => {
                         let displayQty = '';
@@ -576,26 +573,42 @@
                         }
 
                         let warn = item.isCapped ? ' ⚠️ (Limite máx)' : '';
-                        textoResultado += `👉 ${foodData.fonte}: ${displayQty}${warn}\n`;
+                        zapText += `👉 ${foodData.fonte}: ${displayQty}${warn}\n`;
                     });
-                    textoResultado += `----------------\n`;
+                    zapText += `----------------\n`;
                 }
             });
 
-            textoResultado += `\n📊 *Resumo Final:*\n`;
-            textoResultado += `Total Ofertado: ${totalGlobalOfertado.toFixed(0)}g\n`;
-            textoResultado += `Meta Diária: ${metaTotal.toFixed(0)}g\n`;
+            // Resumo Final
+            zapText += `\n📊 *Resumo Final:*\n`;
+            zapText += `Total Ofertado: ${totalGlobalOfertado.toFixed(0)}g\n`;
+            zapText += `Meta Diária: ${metaTotal.toFixed(0)}g\n`;
             
             if (totalGlobalOfertado >= metaTotal) {
-                textoResultado += `✅ Meta Batida com Sucesso!`;
+                zapText += `✅ Meta Batida com Sucesso!`;
             } else {
-                textoResultado += `⚠️ Faltou um pouquinho. Tente adicionar mais fontes.`;
+                zapText += `⚠️ Faltou um pouquinho. Tente adicionar mais fontes.`;
             }
 
+            // Salva na global para o botão do WhatsApp
+            window.ultimoPlanejamento = zapText;
+
+            // --- CONVERSÃO PARA HTML (TELA) ---
+            // 1. Escapa tags HTML perigosas (segurança básica)
+            // 2. Transforma *texto* em <strong>texto</strong>
+            // 3. Transforma quebras de linha em <br>
+            // 4. Transforma tracejados em <hr>
+            
+            let htmlContent = zapText
+                .replace(/\*(.*?)\*/g, '<strong style="color:var(--primary)">$1</strong>') // Negrito
+                .replace(/\n/g, '<br>') // Quebra de linha
+                .replace(/----------------/g, '<hr style="opacity:0.2; margin: 8px 0; border:0; border-top:1px dashed var(--text-sec);">'); // Separador
+
             const resultDiv = document.getElementById('result-area');
-            document.getElementById('plan-text').innerText = textoResultado;
+            // Usamos innerHTML aqui porque agora temos tags HTML reais
+            document.getElementById('plan-text').innerHTML = htmlContent;
+            
             resultDiv.style.display = 'block';
-            window.ultimoPlanejamento = textoResultado;
             resultDiv.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -607,7 +620,7 @@
 
         renderizarTabela();
         initPlanner();
-        atualizarSetas(); // Inicia com seta
+        atualizarSetas();
     </script>
 </body>
 </html>
