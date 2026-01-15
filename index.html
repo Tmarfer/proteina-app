@@ -135,9 +135,14 @@
         .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 350px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: var(--surface); color: var(--text); cursor: pointer; white-space: nowrap; }
+        th { background: var(--surface); color: var(--text); cursor: pointer; white-space: nowrap; user-select: none; }
+        th:hover { background: rgba(0,0,0,0.05); }
+        
         .text-good { color: var(--good); font-weight: bold; }
         .text-price { color: var(--primary); font-weight: bold; }
+        
+        .arrow { font-size: 10px; margin-left: 4px; opacity: 0.5; }
+        .arrow.active { opacity: 1; color: var(--primary); }
 
         /* --- Planejador --- */
         .meal-container { display: flex; flex-direction: column; gap: 15px; }
@@ -250,10 +255,10 @@
             <table id="tabelaProteina">
                 <thead>
                     <tr>
-                        <th onclick="ordenar('fonte')">Alimento</th>
-                        <th onclick="ordenar('proteina')">Prot.</th>
+                        <th onclick="ordenar('fonte')" id="th-fonte">Alimento <span class="arrow"></span></th>
+                        <th onclick="ordenar('proteina')" id="th-proteina">Prot. <span class="arrow"></span></th>
                         <th>Ref.</th>
-                        <th onclick="ordenar('custoProteina')">R$/g <small>▼</small></th>
+                        <th onclick="ordenar('custoProteina')" id="th-custoProteina">R$/g <span class="arrow"></span></th>
                     </tr>
                 </thead>
                 <tbody id="tbody"></tbody>
@@ -317,6 +322,7 @@
 
         let filtroCategoriaAtual = '';
         let ordenacaoAtual = 'custoProteina';
+        let direcaoOrdenacao = 'asc'; // 'asc' ou 'desc'
         let currentTheme = 'dark'; // Padrão Escuro
 
         // --- GLOBAL & THEME ---
@@ -350,7 +356,17 @@
             
             let data = dados.filter(d => filtroCategoriaAtual === '' || d.categoria === filtroCategoriaAtual);
             atualizarStatsDinamicos(data);
-            data.sort((a, b) => a[ordenacaoAtual] - b[ordenacaoAtual]);
+            
+            // Ordenação com Direção
+            data.sort((a, b) => {
+                let valA = a[ordenacaoAtual];
+                let valB = b[ordenacaoAtual];
+
+                if (typeof valA === 'string') {
+                    return direcaoOrdenacao === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return direcaoOrdenacao === 'asc' ? valA - valB : valB - valA;
+            });
 
             data.forEach(item => {
                 const tr = document.createElement('tr');
@@ -362,6 +378,7 @@
                 `;
                 tbody.appendChild(tr);
             });
+            atualizarSetas();
         }
 
         function atualizarStatsDinamicos(dataFiltered) {
@@ -384,8 +401,34 @@
         }
 
         function ordenar(campo) {
-            ordenacaoAtual = campo;
+            if (ordenacaoAtual === campo) {
+                // Inverte se clicar no mesmo
+                direcaoOrdenacao = direcaoOrdenacao === 'asc' ? 'desc' : 'asc';
+            } else {
+                // Reseta se for novo
+                ordenacaoAtual = campo;
+                direcaoOrdenacao = 'asc';
+            }
             renderizarTabela();
+        }
+
+        function atualizarSetas() {
+            // Limpa todas
+            document.querySelectorAll('.arrow').forEach(a => {
+                a.textContent = '';
+                a.classList.remove('active');
+            });
+            
+            // Define o id do th baseado no campo
+            const thId = 'th-' + ordenacaoAtual;
+            const th = document.getElementById(thId);
+            if (th) {
+                const arrow = th.querySelector('.arrow');
+                if (arrow) {
+                    arrow.textContent = direcaoOrdenacao === 'asc' ? '▲' : '▼';
+                    arrow.classList.add('active');
+                }
+            }
         }
 
         function filtrarTabela() {
@@ -458,43 +501,34 @@
                 
                 if (foodIds && foodIds.length > 0) {
                     const mealShare = meal.weight / activeMealsWeightSum;
-                    // Meta desta refeição + o que ficou devendo da anterior
                     let mealTargetProt = (metaTotal * mealShare) + rollingDeficit;
-                    
-                    // Reseta déficit para recalculá-lo se sobrar de novo
                     rollingDeficit = 0; 
 
                     let plannedItems = [];
-
-                    // PASSO 1: Divisão inicial
                     let targetPerItem = mealTargetProt / foodIds.length;
 
                     foodIds.forEach(id => {
                         const food = dados.find(d => d.id === id);
                         let proteinDensity = 0;
 
-                        // Cálculo da Densidade Proteica (g de prot por g de alimento)
                         if (food.porcaoDesc.includes('100g')) {
                             proteinDensity = food.proteina / 100;
                         } else {
                             proteinDensity = food.proteina / food.gPorUnidade;
                         }
 
-                        // Quantos gramas do alimento para atingir a meta?
                         let gramsNeeded = targetPerItem / proteinDensity;
                         
-                        // Aplicar Limites
                         let isCapped = false;
                         if (food.fonte.includes('Atum') && gramsNeeded > 45) {
                             gramsNeeded = 45;
                             isCapped = true;
                         }
-                        if (food.fonte.includes('Cottage') && gramsNeeded > 60) { // Limite 2 colheres (60g)
+                        if (food.fonte.includes('Cottage') && gramsNeeded > 60) { 
                             gramsNeeded = 60;
                             isCapped = true;
                         }
 
-                        // Aplicar Arredondamento (Inteiros para unidades/scoops)
                         if (food.unitType === 'unidade' || food.unitType === 'scoop') {
                             let rawUnits = gramsNeeded / food.gPorUnidade;
                             let units = Math.round(rawUnits);
@@ -502,7 +536,6 @@
                             gramsNeeded = units * food.gPorUnidade;
                         }
 
-                        // Proteína real entregue
                         let actualProt = gramsNeeded * proteinDensity;
 
                         plannedItems.push({
@@ -513,19 +546,15 @@
                         });
                     });
 
-                    // Verifica se faltou proteína nessa refeição (por causa de limites)
                     let totalActualProt = plannedItems.reduce((acc, item) => acc + item.actualProt, 0);
                     
                     if (totalActualProt < mealTargetProt) {
-                        // Se faltou, joga para a próxima refeição (Rolling Deficit)
                         let diff = mealTargetProt - totalActualProt;
-                        // Só joga pra frente se diff for relevante (>1g)
                         if (diff > 1) rollingDeficit = diff;
                     }
 
                     totalGlobalOfertado += totalActualProt;
 
-                    // Gerar Texto
                     textoResultado += `*${meal.label}* (Ofertado: ${totalActualProt.toFixed(0)}g / Meta: ${mealTargetProt.toFixed(0)}g)\n`;
 
                     plannedItems.forEach(item => {
@@ -539,7 +568,6 @@
                         
                         } else if (foodData.unitType === 'colher') {
                             let colheres = item.grams / foodData.gPorUnidade;
-                            // Cottage arredonda pra 0.5
                             let colRounded = (Math.round(colheres * 2) / 2).toFixed(1).replace('.0','');
                             displayQty = `${colRounded} colheres (${item.grams.toFixed(0)}g)`;
                         
@@ -554,7 +582,6 @@
                 }
             });
 
-            // Resumo Final
             textoResultado += `\n📊 *Resumo Final:*\n`;
             textoResultado += `Total Ofertado: ${totalGlobalOfertado.toFixed(0)}g\n`;
             textoResultado += `Meta Diária: ${metaTotal.toFixed(0)}g\n`;
@@ -580,7 +607,7 @@
 
         renderizarTabela();
         initPlanner();
-
+        atualizarSetas(); // Inicia com seta
     </script>
 </body>
 </html>
