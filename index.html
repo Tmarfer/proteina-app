@@ -178,6 +178,7 @@
 
         /* Botões */
         .btn-action {
+            display: block; /* Importante para o link funcionar como botão */
             width: 100%;
             padding: 14px;
             border: none;
@@ -186,6 +187,8 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 10px;
+            text-align: center;
+            text-decoration: none; /* Tira o sublinhado do link */
         }
         .btn-calc { background: var(--text); color: var(--bg); }
         .btn-whatsapp { background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -284,9 +287,9 @@
         <div id="result-area" class="plan-result">
             <h3>&#x2705; Seu Planejamento</h3>
             <div id="plan-text" class="plan-list"></div>
-            <button class="btn-action btn-whatsapp" onclick="compartilharDietaZap()">
+            <a id="btn-zap-link" class="btn-action btn-whatsapp" target="_blank" href="#">
                 &#x1F4F2; Enviar Dieta no WhatsApp
-            </button>
+            </a>
         </div>
     </div>
 
@@ -301,32 +304,28 @@
             { id: 6, fonte: 'Coxa frango', categoria: 'frango', proteina: 27, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 1.2, custoProteina: 0.044 },
             { id: 7, fonte: 'Tilápia', categoria: 'peixe', proteina: 26, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 5.0, custoProteina: 0.192 },
             { id: 8, fonte: 'Atum enlatado', categoria: 'peixe', proteina: 24, porcaoDesc: '100g', gPorUnidade: 100, unitType: 'gramas', custo: 6.5, custoProteina: 0.270 },
-            
-            // Unidades Especiais
             { id: 9, fonte: 'Ovo cozido', categoria: 'outros', proteina: 6.5, porcaoDesc: '1 unid', gPorUnidade: 50, unitType: 'unidade', custo: 0.6, custoProteina: 0.092 }, 
             { id: 10, fonte: 'Clara de Ovo', categoria: 'outros', proteina: 3.5, porcaoDesc: '1 unid', gPorUnidade: 30, unitType: 'unidade', custo: 0.4, custoProteina: 0.11 },
-            { id: 11, fonte: 'Queijo Cottage', categoria: 'outros', proteina: 12, porcaoDesc: '100g', gPorUnidade: 30, unitType: 'colher', custo: 3.5, custoProteina: 0.291 }, // 30g = 1 colher sopa
+            { id: 11, fonte: 'Queijo Cottage', categoria: 'outros', proteina: 12, porcaoDesc: '100g', gPorUnidade: 30, unitType: 'colher', custo: 3.5, custoProteina: 0.291 }, 
             { id: 12, fonte: 'Whey Protein', categoria: 'suplemento', proteina: 24, porcaoDesc: '1 Scoop', gPorUnidade: 30, unitType: 'scoop', custo: 3.5, custoProteina: 0.145 },
             { id: 13, fonte: 'Barra Proteína', categoria: 'suplemento', proteina: 12, porcaoDesc: '1 unid', gPorUnidade: 40, unitType: 'unidade', custo: 8.0, custoProteina: 0.666 },
             { id: 14, fonte: 'Iogurte Proteico', categoria: 'outros', proteina: 14, porcaoDesc: '1 unid', gPorUnidade: 200, unitType: 'unidade', custo: 5.0, custoProteina: 0.35 }
         ];
 
-        // CONFIGURAÇÃO COM CÓDIGOS UNICODE SEGUROS PARA WHATSAPP
         const mealsConfig = [
-            { key: 'cafe', label: '\u2615 Café da Manhã', weight: 0.15 },         // ☕
-            { key: 'lancheManha', label: '\uD83C\uDF4E Lanche Manhã', weight: 0.10 }, // 🍎
-            { key: 'almoco', label: '\uD83C\uDF7D\uFE0F Almoço', weight: 0.30 },      // 🍽️
-            { key: 'lancheTarde', label: '\uD83E\uAA6A Lanche Tarde', weight: 0.10 }, // 🥪
-            { key: 'jantar', label: '\uD83C\uDF72 Jantar', weight: 0.25 },           // 🍲
-            { key: 'ceia', label: '\uD83C\uDF19 Ceia', weight: 0.10 }               // 🌙
+            { key: 'cafe', label: '\u2615 Café da Manhã', weight: 0.15 },
+            { key: 'lancheManha', label: '\uD83C\uDF4E Lanche Manhã', weight: 0.10 },
+            { key: 'almoco', label: '\uD83C\uDF7D\uFE0F Almoço', weight: 0.30 },
+            { key: 'lancheTarde', label: '\uD83E\uAA6A Lanche Tarde', weight: 0.10 },
+            { key: 'jantar', label: '\uD83C\uDF72 Jantar', weight: 0.25 },
+            { key: 'ceia', label: '\uD83C\uDF19 Ceia', weight: 0.10 }
         ];
 
         let filtroCategoriaAtual = '';
         let ordenacaoAtual = 'custoProteina';
         let direcaoOrdenacao = 'asc'; 
-        let currentTheme = 'dark'; // Padrão Escuro
+        let currentTheme = 'dark';
 
-        // --- GLOBAL & THEME ---
         function atualizarGlobal() {
             const peso = parseFloat(document.getElementById('pesoUsuario').value);
             const display = document.getElementById('metaProteinaDisplay');
@@ -350,7 +349,6 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
         }
 
-        // --- ABA 1: TABELA ---
         function renderizarTabela() {
             const tbody = document.getElementById('tbody');
             tbody.innerHTML = '';
@@ -414,13 +412,11 @@
                 a.textContent = '';
                 a.classList.remove('active');
             });
-            
             const thId = 'th-' + ordenacaoAtual;
             const th = document.getElementById(thId);
             if (th) {
                 const arrow = th.querySelector('.arrow');
                 if (arrow) {
-                    // \u25B2 = ▲, \u25BC = ▼
                     arrow.textContent = direcaoOrdenacao === 'asc' ? '\u25B2' : '\u25BC';
                     arrow.classList.add('active');
                 }
@@ -437,12 +433,10 @@
         }
 
         function compartilharTabelaZap() {
-            // \uD83E\uDD47 = 🥇
             const msg = "\uD83E\uDD47 *Tabela Proteína Eficiente*\n\nAcesse para ver o melhor custo benefício:\n" + window.location.href;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // --- ABA 2: PLANEJADOR ---
         function initPlanner() {
             const container = document.getElementById('planner-container');
             const foodOptions = `<option value="">-- Selecione --</option>` + 
@@ -469,10 +463,9 @@
 
             const metaTotal = peso * 2.0; 
             
-            // \uD83C\uDFAF = 🎯
+            // Variável TEXTO (WhatsApp) com Unicode
             let zapText = `\uD83C\uDFAF *Meta Diária:* ${metaTotal.toFixed(0)}g proteína\n\n`;
 
-            // 1. Coleta seleções
             let activeMealsWeightSum = 0;
             const selects = document.querySelectorAll('.food-select');
             const userSelections = {}; 
@@ -491,7 +484,6 @@
 
             if (activeMealsWeightSum === 0) { alert("Selecione alimentos."); return; }
 
-            // 2. Cálculo
             let rollingDeficit = 0;
             let totalGlobalOfertado = 0;
 
@@ -574,32 +566,34 @@
                             displayQty = `${item.grams.toFixed(0)}g`;
                         }
 
-                        // \u26A0\uFE0F = ⚠️
                         let warn = item.isCapped ? ' \u26A0\uFE0F (Limite máx)' : '';
-                        // \uD83D\uDC49 = 👉
                         zapText += `\uD83D\uDC49 ${foodData.fonte}: ${displayQty}${warn}\n`;
                     });
                     zapText += `----------------\n`;
                 }
             });
 
-            // Resumo Final
-            // \uD83D\uDCCA = 📊
             zapText += `\n\uD83D\uDCCA *Resumo Final:*\n`;
             zapText += `Total Ofertado: ${totalGlobalOfertado.toFixed(0)}g\n`;
             zapText += `Meta Diária: ${metaTotal.toFixed(0)}g\n`;
             
             if (totalGlobalOfertado >= metaTotal) {
-                // \u2705 = ✅
                 zapText += `\u2705 Meta Batida com Sucesso!`;
             } else {
-                // \u26A0\uFE0F = ⚠️
                 zapText += `\u26A0\uFE0F Faltou um pouquinho. Tente adicionar mais fontes.`;
             }
 
-            window.ultimoPlanejamento = zapText;
+            // Link do App para o Zap
+            const footerLink = `\n\n\uD83E\uDD66 *Gerado em:* ${window.location.href}`;
+            const finalZapMessage = zapText + footerLink;
 
-            // --- CONVERSÃO PARA HTML (TELA) ---
+            // --- ATUALIZAÇÃO DO LINK DO BOTÃO (Correção do "Inócuo") ---
+            // Agora atualizamos o href do <a> diretamente.
+            const btnZap = document.getElementById('btn-zap-link');
+            // Usamos api.whatsapp.com que é mais seguro que wa.me em webviews
+            btnZap.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(finalZapMessage)}`;
+
+            // --- CONVERSÃO PARA TELA (HTML) ---
             let htmlContent = zapText
                 .replace(/\*(.*?)\*/g, '<strong style="color:var(--primary)">$1</strong>') 
                 .replace(/\n/g, '<br>')
@@ -610,13 +604,6 @@
             
             resultDiv.style.display = 'block';
             resultDiv.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function compartilharDietaZap() {
-            if (!window.ultimoPlanejamento) return;
-            // \uD83E\uDD66 = 🥦
-            const fullText = "\uD83E\uDD66 *Planejamento Proteico*\n\n" + window.ultimoPlanejamento + "\nGerado em: " + window.location.href;
-            window.open(`https://wa.me/?text=${encodeURIComponent(fullText)}`, '_blank');
         }
 
         renderizarTabela();
