@@ -203,14 +203,14 @@
 
     <div class="header-container">
         <div class="header-title">
-            <h1>🥇 Proteína Eficiente</h1>
+            <h1>&#x1F947; Proteína Eficiente</h1>
             <p>Otimização Nutricional</p>
         </div>
-        <button class="theme-btn" onclick="toggleTheme()">🌓 Tema</button>
+        <button class="theme-btn" onclick="toggleTheme()">&#x1F317; Tema</button>
     </div>
 
     <div class="weight-card">
-        <label for="pesoUsuario" style="font-weight: 600; display: block;">⚖️ Seu Peso (kg):</label>
+        <label for="pesoUsuario" style="font-weight: 600; display: block;">&#x2696;&#xFE0F; Seu Peso (kg):</label>
         <input type="number" id="pesoUsuario" class="weight-input" placeholder="Ex: 75" onchange="atualizarGlobal()">
         <p style="font-size: 12px; color: var(--text-sec); margin-top: 5px;">
             Necessidade Estimada: <strong id="metaProteinaDisplay">-</strong> g/dia
@@ -223,8 +223,8 @@
     </div>
 
     <nav class="nav-tabs">
-        <button class="nav-tab active" onclick="switchTab('fontes')">📊 Fontes Proteicas</button>
-        <button class="nav-tab" onclick="switchTab('planejamento')">📝 Planejamento Diário</button>
+        <button class="nav-tab active" onclick="switchTab('fontes')">&#x1F4CA; Fontes Proteicas</button>
+        <button class="nav-tab" onclick="switchTab('planejamento')">&#x1F4DD; Planejamento Diário</button>
     </nav>
 
     <div id="tab-fontes" class="tab-content active">
@@ -240,15 +240,15 @@
             </div>
         </div>
 
-        <input type="text" id="searchInput" placeholder="🔍 Buscar alimento..." style="width: 100%; padding: 10px; border:1px solid var(--border); border-radius: 8px; margin-bottom: 10px; background: var(--surface); color: var(--text);" onkeyup="filtrarTabela()">
+        <input type="text" id="searchInput" placeholder="&#x1F50D; Buscar alimento..." style="width: 100%; padding: 10px; border:1px solid var(--border); border-radius: 8px; margin-bottom: 10px; background: var(--surface); color: var(--text);" onkeyup="filtrarTabela()">
 
         <div class="controls">
             <button class="filter-btn active" onclick="filtrarCategoria('')">Tudo</button>
-            <button class="filter-btn" onclick="filtrarCategoria('carne')">🍖 Carne</button>
-            <button class="filter-btn" onclick="filtrarCategoria('frango')">🍗 Frango</button>
-            <button class="filter-btn" onclick="filtrarCategoria('peixe')">🐟 Peixe</button>
-            <button class="filter-btn" onclick="filtrarCategoria('suplemento')">⚡ Suplem.</button>
-            <button class="filter-btn" onclick="filtrarCategoria('outros')">🥚 Outros</button>
+            <button class="filter-btn" onclick="filtrarCategoria('carne')">&#x1F356; Carne</button>
+            <button class="filter-btn" onclick="filtrarCategoria('frango')">&#x1F357; Frango</button>
+            <button class="filter-btn" onclick="filtrarCategoria('peixe')">&#x1F41F; Peixe</button>
+            <button class="filter-btn" onclick="filtrarCategoria('suplemento')">&#x26A1; Suplem.</button>
+            <button class="filter-btn" onclick="filtrarCategoria('outros')">&#x1F95A; Outros</button>
         </div>
 
         <div class="table-wrapper">
@@ -266,7 +266,7 @@
         </div>
         
         <button class="btn-action btn-whatsapp" onclick="compartilharTabelaZap()" style="margin-top: 20px;">
-            📤 Compartilhar Tabela
+            &#x1F4E4; Compartilhar Tabela
         </button>
     </div>
 
@@ -279,13 +279,13 @@
         <div class="meal-container" id="planner-container">
             </div>
 
-        <button class="btn-action btn-calc" onclick="calcularDieta()">🧮 Calcular Quantidades</button>
+        <button class="btn-action btn-calc" onclick="calcularDieta()">&#x1F9EE; Calcular Quantidades</button>
 
         <div id="result-area" class="plan-result">
-            <h3>✅ Seu Planejamento</h3>
+            <h3>&#x2705; Seu Planejamento</h3>
             <div id="plan-text" class="plan-list"></div>
             <button class="btn-action btn-whatsapp" onclick="compartilharDietaZap()">
-                📲 Enviar Dieta no WhatsApp
+                &#x1F4F2; Enviar Dieta no WhatsApp
             </button>
         </div>
     </div>
@@ -311,13 +311,14 @@
             { id: 14, fonte: 'Iogurte Proteico', categoria: 'outros', proteina: 14, porcaoDesc: '1 unid', gPorUnidade: 200, unitType: 'unidade', custo: 5.0, custoProteina: 0.35 }
         ];
 
+        // CONFIGURAÇÃO COM CÓDIGOS UNICODE SEGUROS PARA WHATSAPP
         const mealsConfig = [
-            { key: 'cafe', label: '☕ Café da Manhã', weight: 0.15 },
-            { key: 'lancheManha', label: '🍎 Lanche Manhã', weight: 0.10 },
-            { key: 'almoco', label: '🍽️ Almoço', weight: 0.30 },
-            { key: 'lancheTarde', label: '🥪 Lanche Tarde', weight: 0.10 },
-            { key: 'jantar', label: '🍲 Jantar', weight: 0.25 },
-            { key: 'ceia', label: '🌙 Ceia', weight: 0.10 }
+            { key: 'cafe', label: '\u2615 Café da Manhã', weight: 0.15 },         // ☕
+            { key: 'lancheManha', label: '\uD83C\uDF4E Lanche Manhã', weight: 0.10 }, // 🍎
+            { key: 'almoco', label: '\uD83C\uDF7D\uFE0F Almoço', weight: 0.30 },      // 🍽️
+            { key: 'lancheTarde', label: '\uD83E\uAA6A Lanche Tarde', weight: 0.10 }, // 🥪
+            { key: 'jantar', label: '\uD83C\uDF72 Jantar', weight: 0.25 },           // 🍲
+            { key: 'ceia', label: '\uD83C\uDF19 Ceia', weight: 0.10 }               // 🌙
         ];
 
         let filtroCategoriaAtual = '';
@@ -419,7 +420,8 @@
             if (th) {
                 const arrow = th.querySelector('.arrow');
                 if (arrow) {
-                    arrow.textContent = direcaoOrdenacao === 'asc' ? '▲' : '▼';
+                    // \u25B2 = ▲, \u25BC = ▼
+                    arrow.textContent = direcaoOrdenacao === 'asc' ? '\u25B2' : '\u25BC';
                     arrow.classList.add('active');
                 }
             }
@@ -435,7 +437,8 @@
         }
 
         function compartilharTabelaZap() {
-            const msg = "🥇 *Tabela Proteína Eficiente*\n\nAcesse para ver o melhor custo benefício:\n" + window.location.href;
+            // \uD83E\uDD47 = 🥇
+            const msg = "\uD83E\uDD47 *Tabela Proteína Eficiente*\n\nAcesse para ver o melhor custo benefício:\n" + window.location.href;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
@@ -466,8 +469,8 @@
 
             const metaTotal = peso * 2.0; 
             
-            // Variável para armazenar o texto "sujo" (markdown) para o WhatsApp
-            let zapText = `🎯 *Meta Diária:* ${metaTotal.toFixed(0)}g proteína\n\n`;
+            // \uD83C\uDFAF = 🎯
+            let zapText = `\uD83C\uDFAF *Meta Diária:* ${metaTotal.toFixed(0)}g proteína\n\n`;
 
             // 1. Coleta seleções
             let activeMealsWeightSum = 0;
@@ -488,7 +491,7 @@
 
             if (activeMealsWeightSum === 0) { alert("Selecione alimentos."); return; }
 
-            // 2. Cálculo com Rolling Deficit
+            // 2. Cálculo
             let rollingDeficit = 0;
             let totalGlobalOfertado = 0;
 
@@ -551,7 +554,6 @@
 
                     totalGlobalOfertado += totalActualProt;
 
-                    // Constrói o texto do Zap (com Markdown)
                     zapText += `*${meal.label}* (Ofertado: ${totalActualProt.toFixed(0)}g / Meta: ${mealTargetProt.toFixed(0)}g)\n`;
 
                     plannedItems.forEach(item => {
@@ -572,40 +574,38 @@
                             displayQty = `${item.grams.toFixed(0)}g`;
                         }
 
-                        let warn = item.isCapped ? ' ⚠️ (Limite máx)' : '';
-                        zapText += `👉 ${foodData.fonte}: ${displayQty}${warn}\n`;
+                        // \u26A0\uFE0F = ⚠️
+                        let warn = item.isCapped ? ' \u26A0\uFE0F (Limite máx)' : '';
+                        // \uD83D\uDC49 = 👉
+                        zapText += `\uD83D\uDC49 ${foodData.fonte}: ${displayQty}${warn}\n`;
                     });
                     zapText += `----------------\n`;
                 }
             });
 
             // Resumo Final
-            zapText += `\n📊 *Resumo Final:*\n`;
+            // \uD83D\uDCCA = 📊
+            zapText += `\n\uD83D\uDCCA *Resumo Final:*\n`;
             zapText += `Total Ofertado: ${totalGlobalOfertado.toFixed(0)}g\n`;
             zapText += `Meta Diária: ${metaTotal.toFixed(0)}g\n`;
             
             if (totalGlobalOfertado >= metaTotal) {
-                zapText += `✅ Meta Batida com Sucesso!`;
+                // \u2705 = ✅
+                zapText += `\u2705 Meta Batida com Sucesso!`;
             } else {
-                zapText += `⚠️ Faltou um pouquinho. Tente adicionar mais fontes.`;
+                // \u26A0\uFE0F = ⚠️
+                zapText += `\u26A0\uFE0F Faltou um pouquinho. Tente adicionar mais fontes.`;
             }
 
-            // Salva na global para o botão do WhatsApp
             window.ultimoPlanejamento = zapText;
 
             // --- CONVERSÃO PARA HTML (TELA) ---
-            // 1. Escapa tags HTML perigosas (segurança básica)
-            // 2. Transforma *texto* em <strong>texto</strong>
-            // 3. Transforma quebras de linha em <br>
-            // 4. Transforma tracejados em <hr>
-            
             let htmlContent = zapText
-                .replace(/\*(.*?)\*/g, '<strong style="color:var(--primary)">$1</strong>') // Negrito
-                .replace(/\n/g, '<br>') // Quebra de linha
-                .replace(/----------------/g, '<hr style="opacity:0.2; margin: 8px 0; border:0; border-top:1px dashed var(--text-sec);">'); // Separador
+                .replace(/\*(.*?)\*/g, '<strong style="color:var(--primary)">$1</strong>') 
+                .replace(/\n/g, '<br>')
+                .replace(/----------------/g, '<hr style="opacity:0.2; margin: 8px 0; border:0; border-top:1px dashed var(--text-sec);">');
 
             const resultDiv = document.getElementById('result-area');
-            // Usamos innerHTML aqui porque agora temos tags HTML reais
             document.getElementById('plan-text').innerHTML = htmlContent;
             
             resultDiv.style.display = 'block';
@@ -614,7 +614,8 @@
 
         function compartilharDietaZap() {
             if (!window.ultimoPlanejamento) return;
-            const fullText = "🥦 *Planejamento Proteico*\n\n" + window.ultimoPlanejamento + "\nGerado em: " + window.location.href;
+            // \uD83E\uDD66 = 🥦
+            const fullText = "\uD83E\uDD66 *Planejamento Proteico*\n\n" + window.ultimoPlanejamento + "\nGerado em: " + window.location.href;
             window.open(`https://wa.me/?text=${encodeURIComponent(fullText)}`, '_blank');
         }
 
