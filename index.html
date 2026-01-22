@@ -1087,12 +1087,20 @@
                     <h2 class="card-title">📅 Planejador de Refeições</h2>
                 </div>
 
-                <p style="color: var(--text-sec); margin-bottom: 20px;">Monte seu plano alimentar diário selecionando alimentos para cada refeição:</p>
+                <div style="background: var(--highlight); padding: 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--primary);">
+                    <h4 style="margin-bottom: 8px; color: var(--primary);">💡 Como Funciona:</h4>
+                    <p style="color: var(--text-sec); font-size: 13px; line-height: 1.6;">
+                        1. Selecione <strong>UMA fonte proteica</strong> para cada refeição<br>
+                        2. O sistema calcula a quantidade ideal baseada nas suas metas<br>
+                        3. <strong>Sugestões automáticas</strong> de carboidratos e gorduras são geradas<br>
+                        4. As quantidades são ajustadas para serem <strong>realistas</strong> (ex: máx 3 ovos, 2 scoops whey, etc.)
+                    </p>
+                </div>
 
                 <div id="meal-planner-container"></div>
 
-                <button class="btn btn-primary btn-full" onclick="calculateMealPlan()">
-                    🧮 Calcular Plano Alimentar
+                <button class="btn btn-primary btn-full" onclick="calculateSmartMealPlan()">
+                    🧮 Gerar Plano Inteligente
                 </button>
 
                 <div id="plan-results" style="display: none; margin-top: 24px;">
@@ -1113,6 +1121,28 @@
     </div>
 
     <script>
+        // === CONFIGURAÇÕES DE UNIDADES E LIMITES REALISTAS ===
+        const foodUnits = {
+            // Suplementos em scoops
+            'Whey Protein': { unit: 'scoop', gramsPerUnit: 30, maxUnits: 2, displayName: 'scoop' },
+            'Albumina': { unit: 'scoop', gramsPerUnit: 30, maxUnits: 2, displayName: 'scoop' },
+            'Caseína': { unit: 'scoop', gramsPerUnit: 30, maxUnits: 2, displayName: 'scoop' },
+
+            // Ovos em unidades
+            'Ovo Inteiro Cozido': { unit: 'unidade', gramsPerUnit: 50, maxUnits: 3, displayName: 'unidade' },
+            'Clara de Ovo': { unit: 'unidade', gramsPerUnit: 33, maxUnits: 6, displayName: 'clara' },
+            'Ovo Mexido': { unit: 'unidade', gramsPerUnit: 50, maxUnits: 3, displayName: 'unidade' },
+
+            // Cottage em colheres
+            'Queijo Cottage': { unit: 'colher', gramsPerUnit: 25, maxUnits: 2, displayName: 'colher de sopa' },
+
+            // Atum com limite
+            'Atum Enlatado': { unit: 'gramas', gramsPerUnit: 1, maxUnits: 100, displayName: 'g' },
+
+            // Pasta de amendoim em colheres
+            'Pasta de Amendoim': { unit: 'colher', gramsPerUnit: 15, maxUnits: 2, displayName: 'colher de sopa' },
+        };
+
         // === DADOS COMPLETOS ===
         const foodsDatabase = [
             // Carnes
@@ -1161,6 +1191,64 @@
             { id: 31, nome: 'Barra de Proteína', categoria: 'suplemento', proteina: 20, carbs: 25, gordura: 8, calorias: 252, custo: 8.0, porcao: '60g (1 unid)' },
             { id: 32, nome: 'Pasta de Amendoim', categoria: 'outros', proteina: 25, carbs: 20, gordura: 50, calorias: 588, custo: 2.5, porcao: '100g' },
         ];
+
+        // === BASE DE CARBOIDRATOS ===
+        const carbsDatabase = [
+            { id: 1, nome: 'Arroz Branco Cozido', carbs: 28, proteina: 2.7, gordura: 0.3, calorias: 130, porcao: '100g' },
+            { id: 2, nome: 'Arroz Integral Cozido', carbs: 23, proteina: 2.6, gordura: 0.9, calorias: 112, porcao: '100g' },
+            { id: 3, nome: 'Batata Doce Cozida', carbs: 20, proteina: 0.6, gordura: 0.1, calorias: 86, porcao: '100g' },
+            { id: 4, nome: 'Batata Inglesa Cozida', carbs: 17, proteina: 2, gordura: 0.1, calorias: 77, porcao: '100g' },
+            { id: 5, nome: 'Macarrão Integral Cozido', carbs: 26, proteina: 5, gordura: 0.9, calorias: 131, porcao: '100g' },
+            { id: 6, nome: 'Aveia em Flocos', carbs: 66, proteina: 14, gordura: 7, calorias: 389, porcao: '100g' },
+            { id: 7, nome: 'Pão Integral', carbs: 49, proteina: 9, gordura: 3.4, calorias: 265, porcao: '100g' },
+            { id: 8, nome: 'Tapioca Hidratada', carbs: 88, proteina: 0.2, gordura: 0.02, calorias: 358, porcao: '100g' },
+            { id: 9, nome: 'Mandioca Cozida', carbs: 30, proteina: 0.6, gordura: 0.3, calorias: 125, porcao: '100g' },
+            { id: 10, nome: 'Banana', carbs: 23, proteina: 1.1, gordura: 0.3, calorias: 89, porcao: '100g' },
+            { id: 11, nome: 'Maçã', carbs: 14, proteina: 0.3, gordura: 0.2, calorias: 52, porcao: '100g' },
+            { id: 12, nome: 'Granola', carbs: 65, proteina: 10, gordura: 15, calorias: 450, porcao: '100g' },
+        ];
+
+        // === BASE DE GORDURAS SAUDÁVEIS ===
+        const fatsDatabase = [
+            { id: 1, nome: 'Azeite Extra Virgem', gordura: 100, carbs: 0, proteina: 0, calorias: 884, porcao: '100ml (6.7 col)' },
+            { id: 2, nome: 'Abacate', gordura: 15, carbs: 9, proteina: 2, calorias: 160, porcao: '100g' },
+            { id: 3, nome: 'Castanha do Pará', gordura: 67, carbs: 12, proteina: 14, calorias: 656, porcao: '100g (15 unid)' },
+            { id: 4, nome: 'Amendoim Torrado', gordura: 49, carbs: 16, proteina: 26, calorias: 567, porcao: '100g' },
+            { id: 5, nome: 'Amêndoas', gordura: 50, carbs: 22, proteina: 21, calorias: 579, porcao: '100g (70 unid)' },
+            { id: 6, nome: 'Nozes', gordura: 65, carbs: 14, proteina: 15, calorias: 654, porcao: '100g (25 unid)' },
+            { id: 7, nome: 'Chia', gordura: 31, carbs: 42, proteina: 17, calorias: 486, porcao: '100g' },
+            { id: 8, nome: 'Linhaça', gordura: 42, carbs: 29, proteina: 18, calorias: 534, porcao: '100g' },
+            { id: 9, nome: 'Coco Ralado', gordura: 65, carbs: 24, proteina: 6.9, calorias: 660, porcao: '100g' },
+            { id: 10, nome: 'Manteiga de Amendoim Natural', gordura: 50, carbs: 20, proteina: 25, calorias: 588, porcao: '100g' },
+        ];
+
+        // === SUGESTÕES DE COMBINAÇÕES POR REFEIÇÃO ===
+        const mealSuggestions = {
+            cafe: {
+                carbs: ['Aveia em Flocos', 'Pão Integral', 'Tapioca Hidratada', 'Banana', 'Granola'],
+                fats: ['Manteiga de Amendoim Natural', 'Abacate', 'Castanha do Pará', 'Amêndoas', 'Chia']
+            },
+            lancheManha: {
+                carbs: ['Banana', 'Maçã', 'Aveia em Flocos', 'Granola'],
+                fats: ['Castanha do Pará', 'Amêndoas', 'Nozes', 'Manteiga de Amendoim Natural']
+            },
+            almoco: {
+                carbs: ['Arroz Integral Cozido', 'Batata Doce Cozida', 'Batata Inglesa Cozida', 'Macarrão Integral Cozido'],
+                fats: ['Azeite Extra Virgem', 'Abacate']
+            },
+            lancheTarde: {
+                carbs: ['Banana', 'Maçã', 'Batata Doce Cozida', 'Tapioca Hidratada'],
+                fats: ['Amendoim Torrado', 'Castanha do Pará', 'Manteiga de Amendoim Natural']
+            },
+            jantar: {
+                carbs: ['Arroz Integral Cozido', 'Batata Doce Cozida', 'Mandioca Cozida', 'Macarrão Integral Cozido'],
+                fats: ['Azeite Extra Virgem', 'Abacate', 'Amêndoas']
+            },
+            ceia: {
+                carbs: ['Aveia em Flocos', 'Banana'],
+                fats: ['Manteiga de Amendoim Natural', 'Amêndoas', 'Nozes']
+            }
+        };
 
         const recipesDatabase = [
             {
@@ -1703,41 +1791,102 @@
             `).join('');
         }
 
-        // === PLANEJADOR DE REFEIÇÕES ===
+        // === PLANEJADOR DE REFEIÇÕES INTELIGENTE ===
         function initMealPlanner() {
             const meals = [
                 { key: 'cafe', label: '☕ Café da Manhã', weight: 0.20 },
-                { key: 'lanche1', label: '🍎 Lanche da Manhã', weight: 0.10 },
+                { key: 'lancheManha', label: '🍎 Lanche da Manhã', weight: 0.10 },
                 { key: 'almoco', label: '🍽️ Almoço', weight: 0.30 },
-                { key: 'lanche2', label: '🥪 Lanche da Tarde', weight: 0.10 },
+                { key: 'lancheTarde', label: '🥪 Lanche da Tarde', weight: 0.10 },
                 { key: 'jantar', label: '🍲 Jantar', weight: 0.25 },
                 { key: 'ceia', label: '🌙 Ceia', weight: 0.05 }
             ];
 
             const container = document.getElementById('meal-planner-container');
-            const foodOptions = foodsDatabase.map(f =>
-                `<option value="${f.id}">${f.nome} (${f.proteina}g prot, ${f.calorias} kcal)</option>`
-            ).join('');
+
+            // Filtrar apenas fontes proteicas principais
+            const proteinOptions = foodsDatabase
+                .filter(f => f.proteina >= 8) // Apenas alimentos com boa quantidade de proteína
+                .map(f => `<option value="${f.id}">${f.nome} (${f.proteina}g proteína/${f.porcao})</option>`)
+                .join('');
 
             container.innerHTML = meals.map(meal => `
-                <div class="card" style="margin-bottom: 16px;">
-                    <h4 style="margin-bottom: 12px;">${meal.label}</h4>
-                    <div style="display: grid; gap: 8px;">
-                        <select class="form-select meal-food-select" data-meal="${meal.key}">
-                            <option value="">-- Selecione um alimento --</option>
-                            ${foodOptions}
-                        </select>
-                        <select class="form-select meal-food-select" data-meal="${meal.key}">
-                            <option value="">-- Selecione um alimento --</option>
-                            ${foodOptions}
-                        </select>
-                        <select class="form-select meal-food-select" data-meal="${meal.key}">
-                            <option value="">-- Selecione um alimento --</option>
-                            ${foodOptions}
+                <div class="card" style="margin-bottom: 16px; background: var(--gradient-surface);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h4 style="margin: 0;">${meal.label}</h4>
+                        <span style="font-size: 12px; color: var(--text-sec); background: var(--surface-2); padding: 4px 12px; border-radius: 12px;">
+                            ${(meal.weight * 100).toFixed(0)}% proteína diária
+                        </span>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 13px;">🥩 Escolha sua fonte proteica:</label>
+                        <select class="form-select protein-select" data-meal="${meal.key}">
+                            <option value="">-- Selecione a proteína principal --</option>
+                            ${proteinOptions}
                         </select>
                     </div>
+                    <div id="suggestions-${meal.key}" style="margin-top: 12px; display: none;"></div>
                 </div>
             `).join('');
+
+            // Adicionar event listeners para mostrar sugestões ao selecionar proteína
+            document.querySelectorAll('.protein-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const mealKey = this.dataset.meal;
+                    const suggestionsDiv = document.getElementById(`suggestions-${mealKey}`);
+
+                    if (this.value) {
+                        suggestionsDiv.style.display = 'block';
+                        suggestionsDiv.innerHTML = `
+                            <div style="background: var(--highlight); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary);">
+                                <p style="font-size: 12px; color: var(--text-sec); margin: 0;">
+                                    <strong style="color: var(--primary);">✨ Sugestões automáticas</strong> de carboidratos e gorduras serão geradas ao calcular o plano!
+                                </p>
+                            </div>
+                        `;
+                    } else {
+                        suggestionsDiv.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // === FUNÇÃO AUXILIAR: FORMATAR QUANTIDADE COM UNIDADE CORRETA ===
+        function formatQuantity(foodName, grams) {
+            const unitConfig = foodUnits[foodName];
+
+            if (!unitConfig) {
+                // Alimento sem configuração específica - retorna em gramas
+                return `${grams.toFixed(0)}g`;
+            }
+
+            const units = grams / unitConfig.gramsPerUnit;
+            const limitedUnits = Math.min(units, unitConfig.maxUnits);
+            const finalGrams = limitedUnits * unitConfig.gramsPerUnit;
+
+            if (unitConfig.unit === 'scoop') {
+                return `${Math.round(limitedUnits)} ${limitedUnits === 1 ? 'scoop' : 'scoops'} (${finalGrams.toFixed(0)}g)`;
+            } else if (unitConfig.unit === 'unidade') {
+                return `${Math.round(limitedUnits)} ${unitConfig.displayName}${limitedUnits > 1 ? 's' : ''}`;
+            } else if (unitConfig.unit === 'colher') {
+                const rounded = Math.round(limitedUnits * 2) / 2; // Arredondar para 0.5
+                return `${rounded} ${unitConfig.displayName}${rounded > 1 ? 's' : ''} (${finalGrams.toFixed(0)}g)`;
+            } else {
+                return `${finalGrams.toFixed(0)}g`;
+            }
+        }
+
+        // === FUNÇÃO AUXILIAR: CALCULAR GRAMAS REAIS CONSIDERANDO LIMITES ===
+        function calculateRealGrams(foodName, targetGrams) {
+            const unitConfig = foodUnits[foodName];
+
+            if (!unitConfig) {
+                return targetGrams; // Sem limite
+            }
+
+            const units = targetGrams / unitConfig.gramsPerUnit;
+            const limitedUnits = Math.min(units, unitConfig.maxUnits);
+            return limitedUnits * unitConfig.gramsPerUnit;
         }
 
         function calculateMealPlan() {
@@ -1880,6 +2029,222 @@
                 calories: totalCalories.toFixed(0),
                 cost: totalCost.toFixed(2),
                 meals: mealPlan
+            };
+        }
+
+        // === PLANEJADOR INTELIGENTE COM SUGESTÕES AUTOMÁTICAS ===
+        function calculateSmartMealPlan() {
+            if (!userMacros) {
+                alert('Por favor, calcule seus macros primeiro na aba Calculadora!');
+                document.querySelectorAll('.nav-tab')[1].click(); // Ir para calculadora
+                return;
+            }
+
+            const meals = [
+                { key: 'cafe', label: '☕ Café da Manhã', weight: 0.20 },
+                { key: 'lancheManha', label: '🍎 Lanche da Manhã', weight: 0.10 },
+                { key: 'almoco', label: '🍽️ Almoço', weight: 0.30 },
+                { key: 'lancheTarde', label: '🥪 Lanche da Tarde', weight: 0.10 },
+                { key: 'jantar', label: '🍲 Jantar', weight: 0.25 },
+                { key: 'ceia', label: '🌙 Ceia', weight: 0.05 }
+            ];
+
+            // Coletar proteínas selecionadas
+            const selectedProteins = {};
+            document.querySelectorAll('.protein-select').forEach(select => {
+                if (select.value) {
+                    selectedProteins[select.dataset.meal] = parseInt(select.value);
+                }
+            });
+
+            if (Object.keys(selectedProteins).length === 0) {
+                alert('Selecione pelo menos uma fonte proteica em alguma refeição!');
+                return;
+            }
+
+            let planHTML = '<div class="card" style="background: var(--highlight);"><h3 style="margin-bottom: 20px; color: var(--primary);">🍽️ Seu Plano Inteligente</h3>';
+            planHTML += '<p style="font-size: 13px; color: var(--text-sec); margin-bottom: 20px;">Plano gerado automaticamente com quantidades realistas e sugestões balanceadas</p>';
+
+            let totalProtein = 0, totalCarbs = 0, totalFat = 0, totalCalories = 0, totalCost = 0;
+
+            meals.forEach(meal => {
+                const proteinId = selectedProteins[meal.key];
+                if (!proteinId) return; // Pular refeição sem proteína selecionada
+
+                const protein = foodsDatabase.find(f => f.id === proteinId);
+                if (!protein) return;
+
+                // Calcular metas da refeição
+                const mealProteinTarget = userMacros.protein * meal.weight;
+                const mealCaloriesTarget = userMacros.calories * meal.weight;
+                const mealCarbsTarget = userMacros.carbs * meal.weight;
+                const mealFatTarget = userMacros.fat * meal.weight;
+
+                // Calcular quantidade de proteína necessária
+                let proteinGrams = (mealProteinTarget / protein.proteina) * 100;
+
+                // Aplicar limites realistas
+                const realProteinGrams = calculateRealGrams(protein.nome, proteinGrams);
+                const actualProteinMacros = (realProteinGrams / 100) * protein.proteina;
+                const actualProteinCarbs = (realProteinGrams / 100) * protein.carbs;
+                const actualProteinFat = (realProteinGrams / 100) * protein.gordura;
+                const actualProteinCal = (realProteinGrams / 100) * protein.calorias;
+                const actualProteinCost = (realProteinGrams / 100) * protein.custo;
+
+                // Calcular déficit de macros
+                const remainingCarbs = Math.max(0, mealCarbsTarget - actualProteinCarbs);
+                const remainingFat = Math.max(0, mealFatTarget - actualProteinFat);
+                const remainingCalories = Math.max(0, mealCaloriesTarget - actualProteinCal);
+
+                // Selecionar sugestões de carboidratos e gorduras
+                const suggestions = mealSuggestions[meal.key] || mealSuggestions.almoco;
+                const suggestedCarbName = suggestions.carbs[Math.floor(Math.random() * suggestions.carbs.length)];
+                const suggestedFatName = suggestions.fats[Math.floor(Math.random() * suggestions.fats.length)];
+
+                const suggestedCarb = carbsDatabase.find(c => c.nome === suggestedCarbName);
+                const suggestedFat = fatsDatabase.find(f => f.nome === suggestedFatName);
+
+                // Calcular quantidades de carbs e gorduras
+                let carbGrams = 0, fatGrams = 0;
+                let actualCarbMacros = 0, actualFatMacros = 0;
+                let actualCarbCal = 0, actualFatCal = 0;
+
+                if (suggestedCarb && remainingCarbs > 5) {
+                    carbGrams = (remainingCarbs / suggestedCarb.carbs) * 100;
+                    actualCarbMacros = (carbGrams / 100) * suggestedCarb.carbs;
+                    actualCarbCal = (carbGrams / 100) * suggestedCarb.calorias;
+                }
+
+                if (suggestedFat && remainingFat > 2) {
+                    fatGrams = (remainingFat / suggestedFat.gordura) * 100;
+                    actualFatMacros = (fatGrams / 100) * suggestedFat.gordura;
+                    actualFatCal = (fatGrams / 100) * suggestedFat.calorias;
+                }
+
+                // Totais da refeição
+                const mealTotalProt = actualProteinMacros + ((carbGrams /100) * (suggestedCarb?.proteina || 0)) + ((fatGrams / 100) * (suggestedFat?.proteina || 0));
+                const mealTotalCarbs = actualProteinCarbs + actualCarbMacros + ((fatGrams / 100) * (suggestedFat?.carbs || 0));
+                const mealTotalFat = actualProteinFat + ((carbGrams / 100) * (suggestedCarb?.gordura || 0)) + actualFatMacros;
+                const mealTotalCal = actualProteinCal + actualCarbCal + actualFatCal;
+
+                totalProtein += mealTotalProt;
+                totalCarbs += mealTotalCarbs;
+                totalFat += mealTotalFat;
+                totalCalories += mealTotalCal;
+                totalCost += actualProteinCost;
+
+                // Renderizar refeição
+                planHTML += `
+                    <div style="margin-bottom: 24px; padding: 16px; background: var(--surface); border-radius: 12px; border: 2px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="margin: 0; color: var(--primary);">${meal.label}</h4>
+                            <span style="font-size: 11px; background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-weight: 600;">
+                                ${mealTotalCal.toFixed(0)} kcal
+                            </span>
+                        </div>
+
+                        <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--primary);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <strong style="color: var(--primary);">🥩 ${protein.nome}</strong>
+                                <strong>${formatQuantity(protein.nome, realProteinGrams)}</strong>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-sec);">
+                                ${actualProteinMacros.toFixed(1)}g prot | ${actualProteinCarbs.toFixed(1)}g carb | ${actualProteinFat.toFixed(1)}g gord
+                            </div>
+                        </div>
+                `;
+
+                if (suggestedCarb && carbGrams > 0) {
+                    planHTML += `
+                        <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--accent);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="color: var(--accent);">🍚 ${suggestedCarb.nome}</span>
+                                <span>${carbGrams.toFixed(0)}g</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-sec);">
+                                ${actualCarbMacros.toFixed(1)}g carb | ${actualCarbCal.toFixed(0)} kcal
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (suggestedFat && fatGrams > 0) {
+                    planHTML += `
+                        <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--danger);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="color: var(--danger);">🥑 ${suggestedFat.nome}</span>
+                                <span>${fatGrams.toFixed(0)}g</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-sec);">
+                                ${actualFatMacros.toFixed(1)}g gord | ${actualFatCal.toFixed(0)} kcal
+                            </div>
+                        </div>
+                    `;
+                }
+
+                planHTML += `
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-sec);">
+                            <strong>Total da refeição:</strong> ${mealTotalProt.toFixed(0)}g prot | ${mealTotalCarbs.toFixed(0)}g carb | ${mealTotalFat.toFixed(0)}g gord
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Resumo final
+            const proteinPercentage = ((totalProtein / userMacros.protein) * 100).toFixed(0);
+            const carbsPercentage = ((totalCarbs / userMacros.carbs) * 100).toFixed(0);
+            const fatPercentage = ((totalFat / userMacros.fat) * 100).toFixed(0);
+
+            planHTML += `
+                <div style="margin-top: 24px; padding: 20px; background: var(--gradient-primary); border-radius: 12px; color: white;">
+                    <h4 style="margin-bottom: 16px; color: white;">📊 Resumo do Dia</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 800;">${totalProtein.toFixed(0)}g</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Proteínas</div>
+                            <div style="font-size: 11px; opacity: 0.8;">${proteinPercentage}% da meta</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 800;">${totalCarbs.toFixed(0)}g</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Carboidratos</div>
+                            <div style="font-size: 11px; opacity: 0.8;">${carbsPercentage}% da meta</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 800;">${totalFat.toFixed(0)}g</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Gorduras</div>
+                            <div style="font-size: 11px; opacity: 0.8;">${fatPercentage}% da meta</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 800;">${totalCalories.toFixed(0)}</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Calorias</div>
+                            <div style="font-size: 11px; opacity: 0.8;">Meta: ${userMacros.calories}</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 800;">R$ ${totalCost.toFixed(2)}</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Custo</div>
+                            <div style="font-size: 11px; opacity: 0.8;">Por dia</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary btn-full" style="margin-top: 16px;" onclick="savePlanToHistory()">
+                    💾 Salvar Plano no Histórico
+                </button>
+            </div>`;
+
+            document.getElementById('plan-results').innerHTML = planHTML;
+            document.getElementById('plan-results').style.display = 'block';
+            document.getElementById('plan-results').scrollIntoView({ behavior: 'smooth' });
+
+            // Armazenar plano atual
+            window.currentPlan = {
+                date: new Date().toISOString(),
+                protein: totalProtein.toFixed(0),
+                carbs: totalCarbs.toFixed(0),
+                fat: totalFat.toFixed(0),
+                calories: totalCalories.toFixed(0),
+                cost: totalCost.toFixed(2),
+                meals: selectedProteins
             };
         }
 
