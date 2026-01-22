@@ -1117,6 +1117,9 @@
                 </div>
                 <div id="history-list"></div>
             </div>
+
+            <!-- Detalhes do plano selecionado -->
+            <div id="history-details" style="display: none; margin-top: 24px;"></div>
         </div>
     </div>
 
@@ -1818,10 +1821,17 @@
                             ${(meal.weight * 100).toFixed(0)}% proteína diária
                         </span>
                     </div>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                        <label class="form-label" style="font-size: 13px;">🥩 Proteína principal:</label>
+                        <select class="form-select protein-select" data-meal="${meal.key}" data-index="0">
+                            <option value="">-- Selecione --</option>
+                            ${proteinOptions}
+                        </select>
+                    </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" style="font-size: 13px;">🥩 Escolha sua fonte proteica:</label>
-                        <select class="form-select protein-select" data-meal="${meal.key}">
-                            <option value="">-- Selecione a proteína principal --</option>
+                        <label class="form-label" style="font-size: 13px;">🥩 Proteína secundária (opcional):</label>
+                        <select class="form-select protein-select" data-meal="${meal.key}" data-index="1">
+                            <option value="">-- Selecione --</option>
                             ${proteinOptions}
                         </select>
                     </div>
@@ -2049,11 +2059,15 @@
                 { key: 'ceia', label: '🌙 Ceia', weight: 0.05 }
             ];
 
-            // Coletar proteínas selecionadas
+            // Coletar proteínas selecionadas (até 2 por refeição)
             const selectedProteins = {};
             document.querySelectorAll('.protein-select').forEach(select => {
                 if (select.value) {
-                    selectedProteins[select.dataset.meal] = parseInt(select.value);
+                    const meal = select.dataset.meal;
+                    if (!selectedProteins[meal]) {
+                        selectedProteins[meal] = [];
+                    }
+                    selectedProteins[meal].push(parseInt(select.value));
                 }
             });
 
@@ -2068,11 +2082,8 @@
             let totalProtein = 0, totalCarbs = 0, totalFat = 0, totalCalories = 0, totalCost = 0;
 
             meals.forEach(meal => {
-                const proteinId = selectedProteins[meal.key];
-                if (!proteinId) return; // Pular refeição sem proteína selecionada
-
-                const protein = foodsDatabase.find(f => f.id === proteinId);
-                if (!protein) return;
+                const proteinIds = selectedProteins[meal.key];
+                if (!proteinIds || proteinIds.length === 0) return; // Pular refeição sem proteína selecionada
 
                 // Calcular metas da refeição
                 const mealProteinTarget = userMacros.protein * meal.weight;
@@ -2080,21 +2091,51 @@
                 const mealCarbsTarget = userMacros.carbs * meal.weight;
                 const mealFatTarget = userMacros.fat * meal.weight;
 
-                // Calcular quantidade de proteína necessária
-                let proteinGrams = (mealProteinTarget / protein.proteina) * 100;
+                // Dividir meta de proteína igualmente entre as proteínas selecionadas
+                const proteinTargetPerSource = mealProteinTarget / proteinIds.length;
 
-                // Aplicar limites realistas
-                const realProteinGrams = calculateRealGrams(protein.nome, proteinGrams);
-                const actualProteinMacros = (realProteinGrams / 100) * protein.proteina;
-                const actualProteinCarbs = (realProteinGrams / 100) * protein.carbs;
-                const actualProteinFat = (realProteinGrams / 100) * protein.gordura;
-                const actualProteinCal = (realProteinGrams / 100) * protein.calorias;
-                const actualProteinCost = (realProteinGrams / 100) * protein.custo;
+                // Processar cada proteína selecionada
+                const proteinItems = [];
+                let totalActualProteinMacros = 0;
+                let totalActualProteinCarbs = 0;
+                let totalActualProteinFat = 0;
+                let totalActualProteinCal = 0;
+                let totalActualProteinCost = 0;
 
-                // Calcular déficit de macros
-                const remainingCarbs = Math.max(0, mealCarbsTarget - actualProteinCarbs);
-                const remainingFat = Math.max(0, mealFatTarget - actualProteinFat);
-                const remainingCalories = Math.max(0, mealCaloriesTarget - actualProteinCal);
+                proteinIds.forEach(proteinId => {
+                    const protein = foodsDatabase.find(f => f.id === proteinId);
+                    if (!protein) return;
+
+                    // Calcular quantidade necessária
+                    let proteinGrams = (proteinTargetPerSource / protein.proteina) * 100;
+
+                    // Aplicar limites realistas
+                    const realProteinGrams = calculateRealGrams(protein.nome, proteinGrams);
+                    const actualProteinMacros = (realProteinGrams / 100) * protein.proteina;
+                    const actualProteinCarbs = (realProteinGrams / 100) * protein.carbs;
+                    const actualProteinFat = (realProteinGrams / 100) * protein.gordura;
+                    const actualProteinCal = (realProteinGrams / 100) * protein.calorias;
+                    const actualProteinCost = (realProteinGrams / 100) * protein.custo;
+
+                    totalActualProteinMacros += actualProteinMacros;
+                    totalActualProteinCarbs += actualProteinCarbs;
+                    totalActualProteinFat += actualProteinFat;
+                    totalActualProteinCal += actualProteinCal;
+                    totalActualProteinCost += actualProteinCost;
+
+                    proteinItems.push({
+                        protein,
+                        realProteinGrams,
+                        actualProteinMacros,
+                        actualProteinCarbs,
+                        actualProteinFat
+                    });
+                });
+
+                // Calcular déficit de macros (usando totais de todas as proteínas)
+                const remainingCarbs = Math.max(0, mealCarbsTarget - totalActualProteinCarbs);
+                const remainingFat = Math.max(0, mealFatTarget - totalActualProteinFat);
+                const remainingCalories = Math.max(0, mealCaloriesTarget - totalActualProteinCal);
 
                 // Selecionar sugestões de carboidratos e gorduras
                 const suggestions = mealSuggestions[meal.key] || mealSuggestions.almoco;
@@ -2122,16 +2163,16 @@
                 }
 
                 // Totais da refeição
-                const mealTotalProt = actualProteinMacros + ((carbGrams /100) * (suggestedCarb?.proteina || 0)) + ((fatGrams / 100) * (suggestedFat?.proteina || 0));
-                const mealTotalCarbs = actualProteinCarbs + actualCarbMacros + ((fatGrams / 100) * (suggestedFat?.carbs || 0));
-                const mealTotalFat = actualProteinFat + ((carbGrams / 100) * (suggestedCarb?.gordura || 0)) + actualFatMacros;
-                const mealTotalCal = actualProteinCal + actualCarbCal + actualFatCal;
+                const mealTotalProt = totalActualProteinMacros + ((carbGrams /100) * (suggestedCarb?.proteina || 0)) + ((fatGrams / 100) * (suggestedFat?.proteina || 0));
+                const mealTotalCarbs = totalActualProteinCarbs + actualCarbMacros + ((fatGrams / 100) * (suggestedFat?.carbs || 0));
+                const mealTotalFat = totalActualProteinFat + ((carbGrams / 100) * (suggestedCarb?.gordura || 0)) + actualFatMacros;
+                const mealTotalCal = totalActualProteinCal + actualCarbCal + actualFatCal;
 
                 totalProtein += mealTotalProt;
                 totalCarbs += mealTotalCarbs;
                 totalFat += mealTotalFat;
                 totalCalories += mealTotalCal;
-                totalCost += actualProteinCost;
+                totalCost += totalActualProteinCost;
 
                 // Renderizar refeição
                 planHTML += `
@@ -2142,17 +2183,22 @@
                                 ${mealTotalCal.toFixed(0)} kcal
                             </span>
                         </div>
+                `;
 
+                // Renderizar todas as proteínas selecionadas
+                proteinItems.forEach(item => {
+                    planHTML += `
                         <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--primary);">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                <strong style="color: var(--primary);">🥩 ${protein.nome}</strong>
-                                <strong>${formatQuantity(protein.nome, realProteinGrams)}</strong>
+                                <strong style="color: var(--primary);">🥩 ${item.protein.nome}</strong>
+                                <strong>${formatQuantity(item.protein.nome, item.realProteinGrams)}</strong>
                             </div>
                             <div style="font-size: 12px; color: var(--text-sec);">
-                                ${actualProteinMacros.toFixed(1)}g prot | ${actualProteinCarbs.toFixed(1)}g carb | ${actualProteinFat.toFixed(1)}g gord
+                                ${item.actualProteinMacros.toFixed(1)}g prot | ${item.actualProteinCarbs.toFixed(1)}g carb | ${item.actualProteinFat.toFixed(1)}g gord
                             </div>
                         </div>
-                `;
+                    `;
+                });
 
                 if (suggestedCarb && carbGrams > 0) {
                     planHTML += `
@@ -2282,13 +2328,16 @@
 
                 return `
                     <div class="history-item">
-                        <div style="flex: 1;">
+                        <div style="flex: 1; cursor: pointer;" onclick="viewHistoryDetails(${index})">
                             <div style="font-weight: 600; margin-bottom: 4px;">📅 ${dateStr} às ${timeStr}</div>
                             <div style="font-size: 13px; color: var(--text-sec);">
                                 ${plan.protein}g prot | ${plan.carbs}g carb | ${plan.fat}g gord | ${plan.calories} kcal | R$ ${plan.cost}
                             </div>
+                            <div style="font-size: 11px; color: var(--primary); margin-top: 4px;">
+                                👁️ Clique para ver detalhes
+                            </div>
                         </div>
-                        <button class="btn btn-outline" style="padding: 8px 16px; font-size: 13px;" onclick="deleteHistoryItem(${index})">
+                        <button class="btn btn-outline" style="padding: 8px 16px; font-size: 13px;" onclick="event.stopPropagation(); deleteHistoryItem(${index})">
                             🗑️
                         </button>
                     </div>
@@ -2310,6 +2359,182 @@
                 localStorage.setItem('history', JSON.stringify(history));
                 renderHistory();
             }
+        }
+
+        function viewHistoryDetails(index) {
+            const plan = history[index];
+            if (!plan) return;
+
+            const date = new Date(plan.date);
+            const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const container = document.getElementById('history-details');
+
+            let detailsHTML = `
+                <div class="card" style="background: var(--highlight); border: 2px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin-bottom: 8px; color: var(--primary);">📋 Detalhes do Plano</h3>
+                            <div style="font-size: 13px; color: var(--text-sec); text-transform: capitalize;">
+                                ${dateStr} às ${timeStr}
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" onclick="closeHistoryDetails()" style="padding: 8px 16px;">✕ Fechar</button>
+                    </div>
+
+                    <!-- Resumo dos Macros -->
+                    <div style="background: var(--gradient-primary); padding: 16px; border-radius: 12px; margin-bottom: 20px; color: white;">
+                        <h4 style="margin-bottom: 12px; color: white;">📊 Resumo Nutricional</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 800;">${plan.protein}g</div>
+                                <div style="font-size: 11px; opacity: 0.9;">Proteínas</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 800;">${plan.carbs}g</div>
+                                <div style="font-size: 11px; opacity: 0.9;">Carboidratos</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 800;">${plan.fat}g</div>
+                                <div style="font-size: 11px; opacity: 0.9;">Gorduras</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 800;">${plan.calories}</div>
+                                <div style="font-size: 11px; opacity: 0.9;">Calorias</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 800;">R$ ${plan.cost}</div>
+                                <div style="font-size: 11px; opacity: 0.9;">Custo/dia</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refeições do Plano -->
+                    <h4 style="margin-bottom: 12px; color: var(--primary);">🍽️ Refeições Planejadas</h4>
+            `;
+
+            // Mapear labels das refeições
+            const mealLabels = {
+                'cafe': '☕ Café da Manhã',
+                'lancheManha': '🍎 Lanche da Manhã',
+                'almoco': '🍽️ Almoço',
+                'lancheTarde': '🥪 Lanche da Tarde',
+                'jantar': '🍲 Jantar',
+                'ceia': '🌙 Ceia'
+            };
+
+            // Renderizar cada refeição
+            if (plan.meals) {
+                Object.entries(plan.meals).forEach(([mealKey, proteinIds]) => {
+                    const mealLabel = mealLabels[mealKey] || mealKey;
+
+                    detailsHTML += `
+                        <div style="background: var(--surface); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary);">
+                            <div style="font-weight: 600; margin-bottom: 8px; color: var(--primary);">${mealLabel}</div>
+                    `;
+
+                    // Se proteinIds é um array (nova versão)
+                    if (Array.isArray(proteinIds)) {
+                        proteinIds.forEach(proteinId => {
+                            const protein = foodsDatabase.find(f => f.id === proteinId);
+                            if (protein) {
+                                detailsHTML += `
+                                    <div style="font-size: 13px; color: var(--text); margin-left: 12px; margin-bottom: 4px;">
+                                        🥩 ${protein.nome}
+                                    </div>
+                                `;
+                            }
+                        });
+                    } else {
+                        // Compatibilidade com versão antiga (proteinId único)
+                        const protein = foodsDatabase.find(f => f.id === proteinIds);
+                        if (protein) {
+                            detailsHTML += `
+                                <div style="font-size: 13px; color: var(--text); margin-left: 12px;">
+                                    🥩 ${protein.nome}
+                                </div>
+                            `;
+                        }
+                    }
+
+                    detailsHTML += `</div>`;
+                });
+            }
+
+            // Botão de compartilhar no WhatsApp
+            detailsHTML += `
+                    <button class="btn btn-primary btn-full" onclick="shareHistoryToWhatsApp(${index})" style="margin-top: 16px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                        </svg>
+                        Compartilhar no WhatsApp
+                    </button>
+                </div>
+            `;
+
+            container.innerHTML = detailsHTML;
+            container.style.display = 'block';
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function closeHistoryDetails() {
+            document.getElementById('history-details').style.display = 'none';
+        }
+
+        function shareHistoryToWhatsApp(index) {
+            const plan = history[index];
+            if (!plan) return;
+
+            const date = new Date(plan.date);
+            const dateStr = date.toLocaleDateString('pt-BR');
+
+            let message = `*🎯 MEU PLANO ALIMENTAR* \\n`;
+            message += `📅 Data: ${dateStr}\\n\\n`;
+            message += `*📊 RESUMO NUTRICIONAL*\\n`;
+            message += `🥩 Proteínas: ${plan.protein}g\\n`;
+            message += `🍚 Carboidratos: ${plan.carbs}g\\n`;
+            message += `🥑 Gorduras: ${plan.fat}g\\n`;
+            message += `🔥 Calorias: ${plan.calories} kcal\\n`;
+            message += `💰 Custo/dia: R$ ${plan.cost}\\n\\n`;
+            message += `*🍽️ REFEIÇÕES*\\n`;
+
+            const mealLabels = {
+                'cafe': '\\u2615 Café da Manhã',
+                'lancheManha': '\\uD83C\\uDF4E Lanche da Manhã',
+                'almoco': '\\uD83C\\uDF7D\\uFE0F Almoço',
+                'lancheTarde': '\\uD83E\\uDD6A Lanche da Tarde',
+                'jantar': '\\uD83C\\uDF72 Jantar',
+                'ceia': '\\uD83C\\uDF19 Ceia'
+            };
+
+            if (plan.meals) {
+                Object.entries(plan.meals).forEach(([mealKey, proteinIds]) => {
+                    const mealLabel = mealLabels[mealKey] || mealKey;
+                    message += `\\n${mealLabel}:\\n`;
+
+                    if (Array.isArray(proteinIds)) {
+                        proteinIds.forEach(proteinId => {
+                            const protein = foodsDatabase.find(f => f.id === proteinId);
+                            if (protein) {
+                                message += `  • ${protein.nome}\\n`;
+                            }
+                        });
+                    } else {
+                        const protein = foodsDatabase.find(f => f.id === proteinIds);
+                        if (protein) {
+                            message += `  • ${protein.nome}\\n`;
+                        }
+                    }
+                });
+            }
+
+            message += `\\n---\\n`;
+            message += `\\uD83D\\uDCAA Gerado pelo ProteínaMax\\n`;
+            message += window.location.href;
+
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
         }
     </script>
 </body>
