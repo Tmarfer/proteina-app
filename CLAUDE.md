@@ -1,668 +1,1089 @@
-# CLAUDE.md - AI Assistant Guide for Proteína Eficiente
+# CLAUDE.md - Guia para Assistentes de IA do ProteínaMax
 
-## Project Overview
+## Visão Geral do Projeto
 
-**Proteína Eficiente** is a single-page web application designed to help users optimize their protein intake for muscle building (hypertrophy). The app calculates daily protein needs based on body weight and helps users plan meals by comparing cost-effectiveness of different protein sources.
+**ProteínaMax** é uma aplicação web single-page completa projetada para ajudar usuários a otimizar sua ingestão proteica e planejar refeições balanceadas para hipertrofia muscular. O app calcula necessidades nutricionais baseadas em dados corporais e objetivos, sugerindo combinações inteligentes de alimentos.
 
-**Primary Language:** Portuguese (Brazil)
+**Idioma Principal:** Português (Brasil)
 
-**Target Users:** Fitness enthusiasts, bodybuilders, and anyone tracking protein intake for health goals
+**Usuários-Alvo:** Praticantes de musculação, atletas, entusiastas de fitness e qualquer pessoa que queira otimizar sua nutrição para ganho de massa muscular
 
-**Key Features:**
-- Daily protein requirement calculator (2.0g/kg for hypertrophy)
-- Protein source comparison table with cost analysis
-- Interactive meal planner with 6 meals/day
-- WhatsApp sharing functionality for meal plans
-- Dark/Light theme support
-- Mobile-first responsive design
+**Funcionalidades Principais:**
+- Calculadora TMB/TDEE com fórmula Mifflin-St Jeor
+- Calculadora de macronutrientes personalizada
+- Dashboard visual com gráficos de progresso
+- Base de dados com 32 alimentos (proteínas, carbs, gorduras)
+- Sistema de favoritos com localStorage
+- Comparador de alimentos
+- 10 receitas ricas em proteína
+- **Planejador inteligente de refeições** com sugestões automáticas
+- Histórico completo de planos alimentares
+- Compartilhamento via WhatsApp formatado
+- Suporte a dark/light theme
+- Design responsivo mobile-first
+- Referências científicas validadas
 
-## Codebase Structure
+## Estrutura do Projeto
 
 ```
 proteina-app/
-├── .git/                 # Git repository
-│   └── hooks/           # Standard git hooks (samples only)
-├── index.html           # ENTIRE APPLICATION (HTML + CSS + JavaScript)
-└── CLAUDE.md           # This file
+├── .git/                 # Repositório Git
+│   └── hooks/           # Git hooks padrão
+├── index.html           # APLICAÇÃO COMPLETA (HTML + CSS + JavaScript)
+└── CLAUDE.md           # Este arquivo
 ```
 
-### Architecture: Single-File Application
+### Arquitetura: Aplicação Single-File
 
-**CRITICAL:** This is a monolithic single-page application. All code lives in `index.html`:
-- **Lines 1-204:** HTML structure and embedded CSS styles
-- **Lines 205-294:** HTML body content (UI elements)
-- **Lines 296-612:** Embedded JavaScript (application logic)
+**CRÍTICO:** Esta é uma aplicação monolítica single-page. Todo o código está em `index.html`:
+- **Linhas 1-700+:** Estrutura HTML e estilos CSS incorporados
+- **Linhas 700+:** Corpo HTML (elementos de UI, 7 abas de navegação)
+- **Linhas 1123+:** JavaScript incorporado (lógica da aplicação)
 
-**No external dependencies:**
-- No package.json
-- No build process
-- No npm/yarn
-- No frameworks (React, Vue, etc.)
-- No CSS preprocessors
-- No bundlers (Webpack, Vite, etc.)
+**Sem dependências externas:**
+- Sem package.json
+- Sem processo de build
+- Sem npm/yarn
+- Sem frameworks (React, Vue, etc.)
+- Sem preprocessadores CSS
+- Sem bundlers (Webpack, Vite, etc.)
 
-**Deployment:** Simply serve `index.html` via any web server or open directly in browser.
+**Deploy:** Simplesmente servir `index.html` via qualquer servidor web ou abrir diretamente no navegador.
 
-## Technology Stack
+## Stack Tecnológica
 
 ### Frontend
-- **HTML5:** Semantic markup with Portuguese labels
+- **HTML5:** Marcação semântica com labels em português
 - **CSS3:**
-  - CSS Custom Properties (CSS Variables) for theming
-  - Flexbox and Grid layouts
-  - Mobile-first responsive design
-  - Embedded in `<style>` tag (lines 7-203)
+  - CSS Custom Properties (Variáveis CSS) para temas
+  - Layouts Flexbox e Grid
+  - Design responsivo mobile-first
+  - Gradientes e animações
+  - Incorporado em tag `<style>`
 
 - **JavaScript (ES6+):**
-  - Pure vanilla JavaScript (no libraries)
-  - Modern features: arrow functions, template literals, destructuring
-  - DOM manipulation APIs
-  - LocalStorage NOT used (state resets on reload)
+  - JavaScript vanilla puro (sem bibliotecas)
+  - Features modernas: arrow functions, template literals, destructuring
+  - APIs de manipulação DOM
+  - **LocalStorage** usado para persistência
 
-### Browser APIs Used
-- `document.querySelector/querySelectorAll` - DOM selection
-- `addEventListener/onclick` - Event handling
-- `window.open()` - WhatsApp sharing
-- `window.location.href` - Current URL for sharing
-- `scrollIntoView()` - Smooth scrolling to results
+### APIs do Navegador Usadas
+- `document.querySelector/querySelectorAll` - Seleção DOM
+- `addEventListener/onclick` - Tratamento de eventos
+- `localStorage.getItem/setItem` - Persistência de dados
+- `window.open()` - Compartilhamento WhatsApp
+- `window.location.href` - URL atual para compartilhar
+- `scrollIntoView()` - Scroll suave para resultados
+- `JSON.parse/JSON.stringify` - Serialização de dados
 
-### No Backend
-- Static HTML file only
-- All calculations performed client-side
-- No database
-- No API calls
-- No server-side logic
+### Sem Backend
+- Arquivo HTML estático apenas
+- Todos os cálculos executados client-side
+- Sem banco de dados
+- Sem chamadas de API
+- Sem lógica server-side
 
-## Data Model
+## Modelo de Dados
 
-### Main Data Structure: `dados` Array (line 298)
+### 1. Base de Dados de Alimentos: `foodsDatabase` (linha ~850)
 
-Each food item is an object with the following schema:
+Base expandida com 32 alimentos categorizados. Schema:
 
 ```javascript
 {
-  id: number,              // Unique identifier (1-14)
-  fonte: string,           // Food name in Portuguese
-  categoria: string,       // Category: 'carne', 'frango', 'peixe', 'suplemento', 'outros'
-  proteina: number,        // Protein content in grams
-  porcaoDesc: string,      // Portion description (e.g., '100g', '1 unid')
-  gPorUnidade: number,     // Grams per unit (for calculations)
-  unitType: string,        // 'gramas', 'unidade', 'scoop', 'colher'
-  custo: number,           // Cost in Brazilian Reais (R$)
-  custoProteina: number    // Cost per gram of protein (R$/g)
+  id: number,              // Identificador único (1-32)
+  nome: string,            // Nome do alimento em português
+  categoria: string,       // Categoria: 'carne', 'frango', 'peixe', 'suplemento',
+                           //            'ovo', 'laticinio', 'vegetal'
+  proteina: number,        // Conteúdo proteico em gramas por porção
+  carbs: number,           // Carboidratos em gramas
+  gordura: number,         // Gorduras em gramas
+  calorias: number,        // Calorias totais
+  porcao: string,          // Descrição da porção (ex: '100g', '1 scoop')
+  custo: number            // Custo em Reais (R$)
 }
 ```
 
-**Example:**
+**Exemplo:**
 ```javascript
 {
   id: 5,
-  fonte: 'Peito frango (Grelh.)',
+  nome: 'Peito de Frango Grelhado',
   categoria: 'frango',
   proteina: 32,
-  porcaoDesc: '100g',
-  gPorUnidade: 100,
-  unitType: 'gramas',
-  custo: 1.5,
-  custoProteina: 0.046
+  carbs: 0,
+  gordura: 3.6,
+  calorias: 165,
+  porcao: '100g',
+  custo: 1.5
 }
 ```
 
-### Meals Configuration: `mealsConfig` Array (line 315)
+**Categorias:**
+- `carne` - Carnes vermelhas
+- `frango` - Carnes de frango
+- `peixe` - Peixes e frutos do mar
+- `suplemento` - Whey, albumina, caseína, creatina
+- `ovo` - Ovos e claras
+- `laticinio` - Queijos, iogurtes
+- `vegetal` - Proteínas vegetais
 
-Defines 6 daily meals with protein distribution weights:
+### 2. Sistema de Unidades Realistas: `foodUnits` (linha ~1125)
+
+Configuração de unidades e limites máximos por alimento:
 
 ```javascript
 {
-  key: string,     // Unique meal identifier
-  label: string,   // Display name with emoji
-  weight: number   // Protein distribution weight (0.10 to 0.30)
+  'Nome do Alimento': {
+    unit: string,           // 'scoop', 'unidade', 'colher', 'gramas'
+    gramsPerUnit: number,   // Gramas por unidade
+    maxUnits: number,       // Quantidade máxima realista
+    displayName: string     // Nome para exibição
+  }
 }
 ```
 
-**Total weight must sum to 1.0 (100%)**
-
-### State Management
-
-**Global State Variables** (lines 324-327):
-- `filtroCategoriaAtual: string` - Current category filter
-- `ordenacaoAtual: string` - Current sort column ('custoProteina' default)
-- `direcaoOrdenacao: string` - Sort direction ('asc' or 'desc')
-- `currentTheme: string` - Current theme ('dark' or 'light')
-
-**No persistence:** All state is lost on page reload.
-
-## Key Features & Functionality
-
-### 1. Protein Calculator (lines 329-338)
-
-**Function:** `atualizarGlobal()`
-- Triggered by weight input change
-- Formula: `protein_goal = weight_kg × 2.0`
-- Based on scientific reference: 1.6-2.2g/kg (Journal of Sports Nutrition)
-- Validation: Weight must be > 30kg
-
-### 2. Table Sorting (lines 400-408)
-
-**Function:** `ordenar(campo)`
-- Bidirectional sorting (ascending/descending)
-- Sortable columns: 'fonte', 'proteina', 'custoProteina'
-- Visual indicators with arrows (▲▼)
-- Default sort: by `custoProteina` ascending (cheapest first)
-
-### 3. Category Filtering (lines 393-398)
-
-**Function:** `filtrarCategoria(cat)`
-- Categories: all, carne, frango, peixe, suplemento, outros
-- Updates dynamic stats (cheapest, highest protein in filtered set)
-- Active category highlighted with primary color
-
-### 4. Search Functionality (lines 426-433)
-
-**Function:** `filtrarTabela()`
-- Real-time search as user types
-- Searches across all visible text in rows
-- Case-insensitive matching
-- Filters table rows without re-rendering
-
-### 5. Meal Planner (lines 440-458, 460-607)
-
-**Core Logic:**
-
-**A. Initialization** (`initPlanner()`):
-- Creates 6 meal cards
-- Each card has 3 food selection dropdowns
-- Populated from `dados` array
-
-**B. Calculation** (`calcularDieta()`):
-- **Step 1:** Calculate total protein goal (weight × 2.0)
-- **Step 2:** Identify active meals (meals with at least one food selected)
-- **Step 3:** Distribute protein proportionally based on `meal.weight`
-- **Step 4:** For each meal, divide protein equally among selected foods
-- **Step 5:** Calculate required grams based on protein density
-- **Step 6:** Apply portion limits:
-  - Tuna (Atum): max 45g
-  - Cottage: max 60g (max 2 tablespoons)
-- **Step 7:** Handle unit conversions:
-  - Round units/scoops to whole numbers
-  - Round tablespoons to nearest 0.5
-  - Display grams for weight-based foods
-- **Step 8:** Track protein deficit and roll forward to next meals
-- **Step 9:** Generate summary with totals
-
-**Deficit Rolling Logic** (lines 487-545):
-- If a meal can't meet its protein target (due to limits), the deficit carries forward
-- Next meals get extra protein allocation to compensate
-- Ensures maximum protein delivery within food constraints
-
-### 6. WhatsApp Sharing
-
-**Two sharing modes:**
-
-**A. Share Table** (`compartilharTabelaZap()` - lines 435-438):
-- Shares app URL with message
-- Opens WhatsApp web/app in new tab
-
-**B. Share Meal Plan** (lines 590-594):
-- Generates detailed meal plan text
-- Uses Unicode escapes for emojis (e.g., `\uD83C\uDFAF` for 🎯)
-- Formats as WhatsApp message with markdown-style bold (`*text*`)
-- Includes app URL footer
-- Uses `api.whatsapp.com` API endpoint
-- Direct link activation (not onclick handler)
-
-**IMPORTANT:** WhatsApp sharing uses Unicode escape sequences, not literal emojis in JavaScript strings. This ensures proper encoding across all platforms.
-
-### 7. Theme Switching (lines 340-343)
-
-**Function:** `toggleTheme()`
-- Toggles between 'light' and 'dark' themes
-- Updates `data-theme` attribute on `<html>` element
-- CSS variables automatically update via `:root[data-theme="..."]`
-- Default: Dark theme
-
-### 8. Tab Navigation (lines 345-350)
-
-**Function:** `switchTab(tabName)`
-- Two tabs: 'fontes' (protein sources) and 'planejamento' (meal planning)
-- Shows/hides content sections with fade-in animation
-- Updates active tab styling
-
-## Development Workflows
-
-### Making Changes
-
-1. **Edit `index.html` directly** - all code is in this single file
-2. **Test in browser** - refresh to see changes
-3. **No build step required** - changes are immediate
-
-### Adding New Food Items
-
-**Location:** `dados` array (line 298)
-
-**Steps:**
-1. Add new object to `dados` array
-2. Assign next sequential `id`
-3. Fill all required fields (see Data Model section)
-4. Calculate `custoProteina = custo / proteina`
-5. Choose appropriate `categoria` and `unitType`
-6. Refresh browser to see changes
-
-**Example:**
+**Exemplos:**
 ```javascript
 {
-  id: 15,
-  fonte: 'Salmão grelhado',
+  'Whey Protein': { unit: 'scoop', gramsPerUnit: 30, maxUnits: 2, displayName: 'scoop' },
+  'Ovo Inteiro Cozido': { unit: 'unidade', gramsPerUnit: 50, maxUnits: 3, displayName: 'unidade' },
+  'Queijo Cottage': { unit: 'colher', gramsPerUnit: 25, maxUnits: 2, displayName: 'colher de sopa' },
+  'Atum Enlatado': { unit: 'gramas', gramsPerUnit: 1, maxUnits: 100, displayName: 'g' }
+}
+```
+
+**Limites Realistas Aplicados:**
+- Whey/Albumina: máx 2 scoops (60g)
+- Ovos inteiros: máx 3 unidades
+- Claras: máx 6 unidades
+- Cottage/Pasta amendoim: máx 2 colheres de sopa
+- Atum: máx 100g
+
+### 3. Base de Carboidratos: `carbsDatabase` (linha ~1150)
+
+12 fontes de carboidratos saudáveis:
+
+```javascript
+{
+  id: number,
+  nome: string,           // Nome em português
+  carbs: number,          // Carboidratos por 100g
+  proteina: number,       // Proteína por 100g
+  gordura: number,        // Gordura por 100g
+  calorias: number,       // Calorias por 100g
+  porcao: string          // Descrição da porção
+}
+```
+
+**Alimentos incluídos:**
+- Arroz Branco/Integral Cozido
+- Batata Doce/Inglesa Cozida
+- Aveia em Flocos
+- Macarrão Integral Cozido
+- Pão Integral
+- Tapioca Hidratada
+- Banana
+- Batata Baroa Cozida
+- Granola
+- Quinoa Cozida
+
+### 4. Base de Gorduras Saudáveis: `fatsDatabase` (linha ~1200)
+
+10 fontes de gorduras saudáveis:
+
+```javascript
+{
+  id: number,
+  nome: string,
+  gordura: number,        // Gordura por 100g/100ml
+  carbs: number,
+  proteina: number,
+  calorias: number,
+  porcao: string
+}
+```
+
+**Alimentos incluídos:**
+- Azeite Extra Virgem
+- Abacate
+- Castanha do Pará
+- Amêndoas
+- Manteiga de Amendoim Natural
+- Sementes de Chia
+- Sementes de Linhaça
+- Salmão (gorduras boas)
+- Atum (ômega-3)
+- Gema de Ovo
+
+### 5. Sugestões Inteligentes por Refeição: `mealSuggestions` (linha ~1250)
+
+Mapeamento de sugestões contextuais de carbs e gorduras por tipo de refeição:
+
+```javascript
+{
+  cafe: {
+    carbs: ['Aveia em Flocos', 'Pão Integral', 'Tapioca Hidratada', 'Banana', 'Granola'],
+    fats: ['Manteiga de Amendoim Natural', 'Abacate', 'Castanha do Pará', 'Amêndoas', 'Sementes de Chia']
+  },
+  almoco: {
+    carbs: ['Arroz Integral Cozido', 'Batata Doce Cozida', 'Batata Inglesa Cozida', 'Macarrão Integral Cozido'],
+    fats: ['Azeite Extra Virgem', 'Abacate']
+  },
+  // ... outras refeições
+}
+```
+
+### 6. Configuração de Refeições: `meals` (usado em várias funções)
+
+Define 6 refeições diárias com distribuição de macros:
+
+```javascript
+[
+  { key: 'cafe', label: '☕ Café da Manhã', weight: 0.20 },       // 20% proteína
+  { key: 'lancheManha', label: '🍎 Lanche da Manhã', weight: 0.10 },  // 10%
+  { key: 'almoco', label: '🍽️ Almoço', weight: 0.30 },           // 30%
+  { key: 'lancheTarde', label: '🥪 Lanche da Tarde', weight: 0.10 },  // 10%
+  { key: 'jantar', label: '🍲 Jantar', weight: 0.25 },            // 25%
+  { key: 'ceia', label: '🌙 Ceia', weight: 0.05 }                 // 5%
+]
+```
+
+**Total weight deve somar 1.0 (100%)**
+
+### 7. Gerenciamento de Estado
+
+**Variáveis Globais:**
+- `foodsDatabase` - Array com 32 alimentos
+- `favorites` - Array de IDs favoritos (localStorage)
+- `history` - Array de planos salvos (localStorage, máx 30)
+- `userMacros` - Objeto com metas calculadas do usuário
+- `currentTheme` - Tema atual ('dark' ou 'light')
+- `window.currentPlan` - Plano atual gerado
+
+**Persistência:**
+- `favorites` e `history` são salvos em localStorage
+- Dados persistem entre sessões
+- Limite de 30 planos no histórico
+
+### 8. Estrutura de Plano Salvo (Formato Completo)
+
+```javascript
+{
+  date: string,              // ISO timestamp
+  protein: string,           // Total proteínas (g)
+  carbs: string,             // Total carboidratos (g)
+  fat: string,               // Total gorduras (g)
+  calories: string,          // Total calorias
+  cost: string,              // Custo total/dia (R$)
+  meals: [                   // Array de refeições detalhadas
+    {
+      key: string,           // Identificador da refeição
+      label: string,         // Label com emoji
+      proteins: [            // Array de proteínas selecionadas
+        {
+          id: number,
+          nome: string,
+          quantidade: string,     // Formatado: "2 scoops", "3 unidades"
+          grams: number,          // Gramas reais
+          macros: {
+            proteina: string,     // "25.0"
+            carbs: string,        // "3.0"
+            gordura: string       // "1.5"
+          }
+        }
+      ],
+      carb: {                // Carboidrato sugerido (pode ser null)
+        nome: string,
+        quantidade: string,  // "100g"
+        macros: string,      // "23.0g carb"
+        calorias: string     // "112 kcal"
+      },
+      fat: {                 // Gordura sugerida (pode ser null)
+        nome: string,
+        quantidade: string,
+        macros: string,
+        calorias: string
+      },
+      totals: {              // Totais da refeição
+        proteina: string,
+        carbs: string,
+        gordura: string,
+        calorias: string
+      }
+    }
+  ]
+}
+```
+
+## Funcionalidades Principais
+
+### 1. Calculadora de TMB/TDEE (Aba Calculadora)
+
+**Função:** `calculateMacros()` (linha ~1400+)
+
+- Calcula Taxa Metabólica Basal usando **Fórmula Mifflin-St Jeor**
+- Multiplica por fator de atividade (Harris-Benedict)
+- Calcula macronutrientes baseado em objetivo
+- Armazena em `userMacros` global
+
+**Fórmula TMB (Mifflin-St Jeor):**
+- Homens: (10 × peso) + (6.25 × altura) - (5 × idade) + 5
+- Mulheres: (10 × peso) + (6.25 × altura) - (5 × idade) - 161
+
+**Fatores de Atividade:**
+- Sedentário: 1.2
+- Levemente ativo: 1.375
+- Moderadamente ativo: 1.55
+- Muito ativo: 1.725
+- Extremamente ativo: 1.9
+
+**Distribuição de Macros (Hipertrofia):**
+- Proteínas: 2.0g/kg de peso corporal
+- Gorduras: 25% das calorias totais
+- Carboidratos: restante das calorias
+
+**Referências Científicas Exibidas:**
+- Fórmula Mifflin-St Jeor (PubMed)
+- Fatores de atividade Harris-Benedict (PNAS)
+- Recomendações ISSN proteína (JISSN)
+- Distribuição macronutrientes (JISSN)
+- Gorduras essenciais (Nutrients)
+
+### 2. Dashboard Visual (Aba Dashboard)
+
+**Função:** `updateDashboard()` (linha ~1600+)
+
+- Gráfico de pizza CSS puro para macros
+- Cards com totais de alimentos, favoritos, planos salvos
+- Visual moderno com gradientes
+- Atualizado automaticamente após calcular macros
+
+### 3. Tabela de Alimentos (Aba Fontes Proteicas)
+
+**Função:** `renderFoodsTable()` (linha ~1300+)
+
+- Renderiza 32 alimentos com todos os macros
+- Sistema de favoritos (estrela clicável)
+- Ordenação por proteína, carbs, gordura, calorias, custo
+- Filtros por categoria
+- Busca em tempo real
+- Badges coloridos por categoria
+- Persistência de favoritos em localStorage
+
+**Features:**
+- Click na estrela adiciona/remove favoritos
+- Filtros: todas, carne, frango, peixe, suplemento, ovo, laticinio, vegetal
+- Ordenação ascendente/descendente
+- Busca case-insensitive
+
+### 4. Favoritos (Aba Favoritos)
+
+**Função:** `renderFavorites()` (linha ~1450+)
+
+- Lista alimentos marcados como favoritos
+- Permite remover favoritos
+- Estado vazio amigável
+- Sincronizado com tabela principal
+
+### 5. Comparador de Alimentos (Aba Comparador)
+
+**Funções:** `populateCompareSelects()`, `compareFoods()` (linha ~1550+)
+
+- Seleciona 2 alimentos para comparar lado a lado
+- Exibe todos os macros
+- Mostra custo por porção
+- Cálculo de custo/g de proteína
+- Visual com cores diferenciadas
+
+### 6. Receitas (Aba Receitas)
+
+**Função:** `renderRecipes()` (linha ~1700+)
+
+- 10 receitas ricas em proteína
+- Ingredientes e modo de preparo
+- Valores nutricionais totais
+- Cards expansíveis
+
+**Receitas incluídas:**
+1. Omelete Proteico
+2. Frango Grelhado com Legumes
+3. Smoothie Proteico
+4. Salada de Atum
+5. Panqueca de Banana e Aveia
+6. Peito de Frango com Batata Doce
+7. Wrap de Frango
+8. Vitamina de Whey com Frutas
+9. Ovo Mexido com Cottage
+10. Bowl de Quinoa Proteico
+
+### 7. Planejador Inteligente de Refeições (Aba Planejador) ⭐
+
+**Função:** `initMealPlanner()` (linha ~1795)
+**Função:** `calculateSmartMealPlan()` (linha ~2043)
+
+**Fluxo Completo:**
+
+**A. Inicialização:**
+- Cria 6 cards de refeição (café, lanche manhã, almoço, lanche tarde, jantar, ceia)
+- Cada card tem **2 selects de proteína** (principal + secundária opcional)
+- Popula com alimentos que têm proteína >= 8g
+
+**B. Seleção do Usuário:**
+- Usuário escolhe 1 ou 2 proteínas por refeição
+- Pode deixar refeições vazias
+- Feedback visual ao selecionar
+
+**C. Cálculo Inteligente (ao clicar "Gerar Plano Inteligente"):**
+
+1. **Valida se usuário calculou macros** na aba Calculadora
+2. **Coleta proteínas selecionadas** de todos os selects
+3. **Para cada refeição:**
+   - Divide meta de proteína igualmente entre proteínas selecionadas
+   - Calcula quantidade necessária de cada proteína
+   - **Aplica limites realistas** via `calculateRealGrams()`
+   - Calcula macros reais de cada proteína
+   - Calcula déficit de carbs e gorduras restante
+   - **Seleciona carb e gordura sugeridos** baseado no tipo de refeição
+   - Calcula quantidades de carb e gordura para completar macros
+   - Armazena detalhes completos da refeição
+
+4. **Renderiza plano:**
+   - Card para cada refeição
+   - Todas as proteínas com quantidades formatadas
+   - Carboidrato sugerido
+   - Gordura sugerida
+   - Totais da refeição
+   - Resumo do dia com totais e percentuais
+
+5. **Armazena plano em `window.currentPlan`** com estrutura completa
+
+**D. Funções Auxiliares:**
+
+**`formatQuantity(foodName, grams)`:**
+- Formata quantidade com unidade correta
+- Retorna: "2 scoops (60g)", "3 unidades", "1.5 colheres de sopa (37g)", "150g"
+
+**`calculateRealGrams(foodName, targetGrams)`:**
+- Aplica limite máximo do alimento
+- Calcula gramas reais respeitando limites
+- Retorna quantidade ajustada
+
+**Lógica de Sugestões:**
+- Café da manhã → Aveia, pão integral, tapioca + amendoim, abacate, castanhas
+- Almoço/Jantar → Arroz, batata doce, macarrão + azeite, abacate
+- Lanches → Frutas, granola + oleaginosas
+- Ceia → Aveia, banana + gorduras saudáveis
+
+### 8. Histórico de Planos (Aba Histórico) ⭐
+
+**Função:** `savePlanToHistory()` (linha ~2333)
+**Função:** `renderHistory()` (linha ~2346)
+**Função:** `viewHistoryDetails(index)` (linha ~2400)
+**Função:** `shareHistoryToWhatsApp(index)` (linha ~2591)
+
+**A. Salvamento:**
+- Salva plano completo em `history` array
+- Persiste em localStorage
+- Mantém últimos 30 planos
+- Estrutura detalhada com todos os alimentos
+
+**B. Visualização da Lista:**
+- Lista todos os planos salvos
+- Mostra data/hora, resumo de macros
+- Cada item é clicável
+- Botão de deletar individual
+- Botão de limpar histórico
+
+**C. Visualização Detalhada:**
+- Click no item abre detalhes completos
+- Mostra resumo nutricional destacado
+- Lista todas as refeições
+- Exibe todas as proteínas, carbs e gorduras
+- Quantidades formatadas e macros individuais
+- Totais por refeição
+- Botão de fechar
+- Scroll suave
+
+**D. Compartilhamento WhatsApp:**
+- Botão dentro da visualização de detalhes
+- Gera mensagem formatada corretamente
+- Usa quebras de linha reais (`\n` não `\\n`)
+- Emojis literais (não códigos Unicode)
+- Inclui:
+  - Título e data
+  - Resumo nutricional completo
+  - Todas as refeições detalhadas
+  - Proteínas com quantidades e macros
+  - Carbs e gorduras sugeridos
+  - Totais por refeição
+  - Link do app
+
+**Formato da Mensagem:**
+```
+*🎯 MEU PLANO ALIMENTAR*
+📅 Data: 22/01/2026
+
+*📊 RESUMO NUTRICIONAL*
+🥩 Proteínas: 180g
+🍚 Carboidratos: 250g
+🥑 Gorduras: 60g
+🔥 Calorias: 2200 kcal
+💰 Custo/dia: R$ 25.50
+
+*🍽️ REFEIÇÕES DETALHADAS*
+
+☕ Café da Manhã:
+  🥩 Ovo Inteiro Cozido - 3 unidades
+     15.0g prot | 1.5g carb | 10.5g gord
+  🍚 Aveia em Flocos - 50g
+     25.5g carb
+  📊 Total: 39g prot | 30g carb | 19g gord | 450 kcal
+
+━━━━━━━━━━━━━━━
+💪 Gerado pelo ProteínaMax
+https://...
+```
+
+**Compatibilidade:**
+- Detecta automaticamente formato novo (detalhado) ou antigo (só proteínas)
+- Renderização e compartilhamento funcionam em ambos
+
+### 9. Tema Claro/Escuro
+
+**Função:** `toggleTheme()` (linha ~1390)
+
+- Alterna entre 'dark' e 'light'
+- Atualiza atributo `data-theme` no `<html>`
+- CSS variables atualizam automaticamente
+- Tema escuro como padrão
+
+**Cores (Dark Theme):**
+- Primary: #00ff88 (verde neon)
+- Background: #050505
+- Surface: #0f0f0f
+- Text: #e0e0e0
+
+## Fluxo de Desenvolvimento
+
+### Fazendo Alterações
+
+1. **Editar `index.html` diretamente** - todo código está neste arquivo único
+2. **Testar no navegador** - refresh para ver mudanças
+3. **Sem build step** - mudanças são imediatas
+
+### Adicionando Novos Alimentos
+
+**Localização:** `foodsDatabase` array (linha ~850)
+
+**Passos:**
+1. Adicionar novo objeto ao array `foodsDatabase`
+2. Atribuir próximo ID sequencial
+3. Preencher todos os campos obrigatórios
+4. Escolher categoria apropriada
+5. Refresh do navegador para ver mudanças
+
+**Exemplo:**
+```javascript
+{
+  id: 33,
+  nome: 'Salmão Grelhado',
   categoria: 'peixe',
   proteina: 25,
-  porcaoDesc: '100g',
-  gPorUnidade: 100,
-  unitType: 'gramas',
-  custo: 8.5,
-  custoProteina: 0.340
+  carbs: 0,
+  gordura: 12,
+  calorias: 206,
+  porcao: '100g',
+  custo: 8.50
 }
 ```
 
-### Adding New Meal Slots
+### Adicionando Limites Realistas
 
-**Location:** `mealsConfig` array (line 315)
+**Localização:** `foodUnits` object (linha ~1125)
 
-**Requirements:**
-- All `weight` values must sum to 1.0
-- Use emoji icons for visual appeal
-- Key must be unique and URL-safe (no spaces)
+```javascript
+'Nome Exato do Alimento': {
+  unit: 'unidade',        // ou 'scoop', 'colher', 'gramas'
+  gramsPerUnit: 50,       // gramas por unidade
+  maxUnits: 3,            // quantidade máxima realista
+  displayName: 'unidade'  // nome para exibição
+}
+```
 
-### Modifying Styling
+### Adicionando Carboidratos/Gorduras
 
-**CSS Variables** (lines 9-35):
-- Light theme: `:root[data-theme="light"]`
-- Dark theme: `:root[data-theme="dark"]`
+**Carboidratos:** `carbsDatabase` (linha ~1150)
+**Gorduras:** `fatsDatabase` (linha ~1200)
 
-**To change colors:**
-1. Locate the appropriate CSS variable
-2. Update color value in both theme sections
-3. Changes apply globally via `var(--variable-name)`
+Seguir schema existente com id, nome, macros, calorias, porção.
 
-### Modifying Calculations
+### Modificando Sugestões de Refeições
 
-**Protein multiplier** (line 333, 464):
-- Current: 2.0g/kg
-- To change: update both instances in `atualizarGlobal()` and `calcularDieta()`
+**Localização:** `mealSuggestions` (linha ~1250)
 
-**Portion limits** (lines 514-521):
-- Tuna: 45g max
-- Cottage: 60g max
-- To adjust: modify if conditions in `calcularDieta()`
+Adicionar/remover alimentos nos arrays `carbs` e `fats` de cada refeição.
 
-## Git Conventions
+### Modificando Distribuição de Proteína
 
-### Commit Messages
+**Localização:** Array `meals` em `initMealPlanner()` e `calculateSmartMealPlan()`
 
-**Language:** Portuguese (Brazil)
+**Regra:** Soma de todos os `weight` deve ser 1.0 (100%)
 
-**Style:** Imperative mood, descriptive
-- ✅ "Adiciona ordenação bidirecional na tabela de fontes"
-- ✅ "Fix encoding de emojis para WhatsApp usando Unicode Escapes"
-- ✅ "Corrige cálculo de proteína real e lógica de arredondamento"
-- ❌ "Updated stuff"
-- ❌ "WIP"
+```javascript
+{ key: 'cafe', label: '☕ Café da Manhã', weight: 0.25 },  // Aumentado para 25%
+{ key: 'almoco', label: '🍽️ Almoço', weight: 0.25 },      // Reduzido para 25%
+// ... ajustar outros para somar 1.0
+```
 
-**Pattern:** `[Action] [specific change]`
-- Common actions: `Adiciona`, `Fix`, `Corrige`, `Atualiza`, `Remove`
+### Modificando Multiplicador de Proteína
 
-### Branch Naming
+**Localização:** Função `calculateMacros()` (linha ~1400+)
 
-**AI Assistant Branches:** `claude/[descriptive-name]-[session-id]`
-- Example: `claude/add-claude-documentation-0yi0K`
-- Session ID is auto-generated and must match for push to succeed
+Atualmente usa **2.0g/kg** para hipertrofia. Para mudar:
 
-**Convention:**
-- Feature branches: descriptive kebab-case
-- No version numbers in branch names
-- Keep branch names concise but clear
+```javascript
+const proteinGrams = weight * 2.2; // Alterar de 2.0 para 2.2
+```
 
-### Git Workflow
+## Convenções de Código
 
-1. **Always check current branch** before making changes
-2. **Commit frequently** with clear messages
-3. **Push to designated branch** using `git push -u origin <branch-name>`
-4. **Never force push** to main/master
-5. **Use descriptive commit messages** in Portuguese
+### Convenções JavaScript
 
-**For AI Assistants:**
-- Develop on specified claude/* branch
-- Commit after logical changes
-- Push when work is complete
-- Create PR with summary in Portuguese
+**Nomenclatura:**
+- **Funções:** camelCase, verbos descritivos
+  - `calculateMacros()`, `renderFoodsTable()`, `viewHistoryDetails()`
+- **Variáveis:** camelCase, substantivos descritivos
+  - `foodsDatabase`, `userMacros`, `currentTheme`
+- **Constantes:** camelCase (não UPPER_CASE neste codebase)
 
-## Coding Conventions
-
-### JavaScript Style
-
-**Naming Conventions:**
-- **Functions:** camelCase, descriptive verbs
-  - `atualizarGlobal()`, `calcularDieta()`, `renderizarTabela()`
-- **Variables:** camelCase, descriptive nouns
-  - `filtroCategoriaAtual`, `direcaoOrdenacao`, `metaTotal`
-- **Constants:** camelCase (not UPPER_CASE in this codebase)
-  - `dados`, `mealsConfig`
-
-**Code Organization:**
-1. Data declarations first (`dados`, `mealsConfig`)
-2. State variables
-3. Initialization functions
+**Organização do Código:**
+1. Declarações de dados (foodsDatabase, carbsDatabase, etc.)
+2. Variáveis de estado
+3. Funções de inicialização
 4. Event handlers
-5. Helper functions
-6. Main execution at bottom
+5. Funções auxiliares
+6. Event listener DOMContentLoaded no final
 
-**Functions:**
-- Keep functions focused (single responsibility)
-- Use descriptive names that indicate action
-- Prefer arrow functions for callbacks
-- No semicolons (style is inconsistent but leans toward optional)
+**Estilo:**
+- Preferir arrow functions para callbacks
+- Template literals para strings com variáveis
+- Nomes descritivos que indicam ação
+- Semicolons opcionais (estilo inconsistente no código)
 
-### HTML Conventions
+### Convenções HTML
 
-**Attributes Order:**
+**Ordem de Atributos:**
 1. id
 2. class
 3. data-* attributes
-4. other attributes
+4. outros atributos
 5. event handlers (onclick, onchange)
 
-**IDs:** Use kebab-case
-- `peso-usuario`, `result-area`, `plan-text`
+**IDs:** kebab-case
+- `history-list`, `plan-results`, `meal-planner-container`
 
-**Classes:** Use kebab-case
-- `weight-card`, `nav-tabs`, `btn-action`
+**Classes:** kebab-case
+- `nav-tab`, `card`, `btn-primary`, `form-select`
 
-### CSS Conventions
+### Convenções CSS
 
-**Variables:** Use CSS custom properties for theming
-- Colors: `--primary`, `--bg`, `--text`, `--border`
-- Always define for both light and dark themes
+**Variáveis:** CSS custom properties para temas
+- Sempre definir para ambos light e dark themes
+- Cores: `--primary`, `--bg`, `--surface`, `--text`
 
-**Class naming:** BEM-inspired but simplified
-- Block: `.meal-card`
-- Element: `.meal-title`, `.meal-selects`
-- Modifier: `.nav-tab.active`, `.filter-btn.active`
+**Naming de Classes:** Estilo BEM simplificado
+- Block: `.card`
+- Element: `.card-header`, `.card-title`
+- Modifier: `.btn-primary`, `.nav-tab.active`
 
-**Units:**
-- Font sizes: `px` (not rem)
+**Unidades:**
+- Font sizes: `px`
 - Spacing: `px`
 - Borders: `px`
 - Border radius: `px`
 
-### Portuguese Language
+### Português do Brasil
 
-**All user-facing text must be in Portuguese (Brazil):**
-- UI labels
-- Button text
-- Error messages
-- Comments in code
-- Console logs (if any)
+**Todo texto user-facing DEVE estar em português:**
+- Labels de UI
+- Textos de botões
+- Mensagens de erro/sucesso
+- Comentários no código (opcional mas recomendado)
+- Console logs (se houver)
 
-**Keep variable/function names in English or Portuguese:**
-- This codebase uses Portuguese: `dados`, `fonte`, `proteina`
-- Be consistent with existing naming
+**Nomes de variáveis/funções:**
+- Codebase usa mix de português e inglês
+- Novos nomes podem ser em qualquer idioma, mas seja consistente
 
-## Testing & Deployment
+## Testes e Deploy
 
-### Testing
+### Testes
 
-**No automated tests exist.**
+**Não há testes automatizados.**
 
-**Manual testing checklist:**
-1. Open `index.html` in browser
-2. Test weight calculator:
-   - Enter valid weight (> 30kg)
-   - Verify protein calculation (weight × 2.0)
-3. Test table features:
-   - Sort by each column
-   - Filter by category
-   - Search functionality
-4. Test meal planner:
-   - Select foods for multiple meals
-   - Calculate diet plan
-   - Verify totals and quantities
-   - Test portion limits (atum, cottage)
-5. Test WhatsApp sharing:
-   - Share table
-   - Share meal plan (verify emojis render correctly)
-6. Test theme switching:
-   - Toggle light/dark
-   - Verify all colors update
-7. Test responsive design:
-   - Mobile viewport (320px+)
-   - Tablet viewport
-   - Desktop viewport
+**Checklist de testes manuais:**
 
-### Browser Compatibility
+**Calculadora:**
+- [ ] Inserir dados válidos
+- [ ] Verificar cálculo de TMB
+- [ ] Verificar cálculo de macros
+- [ ] Testar todos os níveis de atividade
+- [ ] Validar referências científicas
 
-**Target Browsers:**
+**Tabela de Alimentos:**
+- [ ] Ordenar por cada coluna
+- [ ] Filtrar por categoria
+- [ ] Buscar alimentos
+- [ ] Adicionar/remover favoritos
+- [ ] Verificar persistência de favoritos
+
+**Planejador:**
+- [ ] Selecionar 1 proteína por refeição
+- [ ] Selecionar 2 proteínas por refeição
+- [ ] Calcular plano inteligente
+- [ ] Verificar quantidades formatadas (scoops, unidades, colheres)
+- [ ] Verificar limites realistas aplicados
+- [ ] Verificar sugestões de carbs e gorduras
+- [ ] Verificar totais e percentuais
+
+**Histórico:**
+- [ ] Salvar plano
+- [ ] Visualizar lista de planos
+- [ ] Clicar para ver detalhes
+- [ ] Verificar exibição completa (proteínas, carbs, gorduras)
+- [ ] Compartilhar no WhatsApp
+- [ ] Verificar formatação da mensagem no WhatsApp
+- [ ] Deletar plano individual
+- [ ] Limpar histórico completo
+
+**Geral:**
+- [ ] Alternar tema claro/escuro
+- [ ] Testar em viewport mobile (320px+)
+- [ ] Testar em tablet
+- [ ] Testar em desktop
+- [ ] Verificar persistência em localStorage
+
+### Compatibilidade de Navegadores
+
+**Navegadores Alvo:**
 - Chrome/Edge (latest)
 - Firefox (latest)
 - Safari (latest)
 - Mobile browsers (iOS Safari, Chrome Mobile)
 
-**Features requiring modern browser:**
+**Features que requerem navegador moderno:**
 - CSS Grid
 - CSS Custom Properties
-- ES6+ JavaScript features
+- ES6+ JavaScript
 - Flexbox
+- LocalStorage API
 
-**No IE11 support** (uses modern CSS and JS)
+**Sem suporte para IE11** (usa CSS e JS modernos)
 
-### Deployment
+### Deploy
 
-**Static Hosting Options:**
+**Opções de Hospedagem Estática:**
 - GitHub Pages
 - Netlify
 - Vercel
-- Any web server
-- Can even run from `file://` URL
+- Qualquer servidor web
+- Pode rodar de URL `file://`
 
-**Steps:**
-1. Commit changes to repository
-2. Push to hosting service or web server
-3. No build step required
-4. `index.html` is the entry point
+**Passos:**
+1. Commitar mudanças no repositório
+2. Push para serviço de hospedagem ou servidor web
+3. Sem build step necessário
+4. `index.html` é o entry point
 
-## Common Tasks & Examples
+## Convenções Git
 
-### Task 1: Add a New Protein Source
+### Mensagens de Commit
+
+**Idioma:** Português (Brasil)
+
+**Estilo:** Modo imperativo, descritivo
+- ✅ "Adiciona seleção de 2 proteínas por refeição"
+- ✅ "Corrige formatação da mensagem WhatsApp"
+- ✅ "Implementa planejador inteligente com sugestões automáticas"
+- ❌ "Updated stuff"
+- ❌ "WIP"
+- ❌ "fix bug"
+
+**Padrão:** `[Ação] [mudança específica]`
+- Ações comuns: `Adiciona`, `Corrige`, `Implementa`, `Atualiza`, `Remove`, `Refatora`
+
+**Commits complexos:** Usar mensagem de commit multilinha com detalhes
+
+### Nomenclatura de Branches
+
+**Branches de AI Assistant:** `claude/[nome-descritivo]-[session-id]`
+- Exemplo: `claude/add-meal-planner-features-abc123`
+- Session ID é auto-gerado e deve corresponder para push funcionar
+
+**Convenção:**
+- Feature branches: kebab-case descritivo
+- Sem números de versão em nomes de branch
+- Manter nomes concisos mas claros
+
+### Workflow Git
+
+1. **Sempre verificar branch atual** antes de fazer mudanças
+2. **Commitar frequentemente** com mensagens claras
+3. **Push para branch designado** usando `git push -u origin <branch-name>`
+4. **Nunca force push** para main/master
+5. **Usar mensagens descritivas** em português
+
+**Para AI Assistants:**
+- Desenvolver em branch claude/* especificado
+- Commitar após mudanças lógicas
+- Push quando trabalho estiver completo
+- Criar PR com resumo em português
+
+## Tarefas Comuns & Exemplos
+
+### Tarefa 1: Adicionar Nova Proteína
 
 ```javascript
-// In dados array (line 298), add:
+// Em foodsDatabase array (linha ~850), adicionar:
 {
-  id: 15,
-  fonte: 'Filé de frango',
-  categoria: 'frango',
-  proteina: 31,
-  porcaoDesc: '100g',
-  gPorUnidade: 100,
-  unitType: 'gramas',
-  custo: 2.0,
-  custoProteina: 0.064
+  id: 33,
+  nome: 'Filé Mignon',
+  categoria: 'carne',
+  proteina: 29,
+  carbs: 0,
+  gordura: 8,
+  calorias: 195,
+  porcao: '100g',
+  custo: 12.00
 }
 ```
 
-### Task 2: Change Default Sort Order
+### Tarefa 2: Adicionar Limite Realista para Novo Alimento
 
 ```javascript
-// Line 325 - change to sort by protein content descending:
-let ordenacaoAtual = 'proteina';
-let direcaoOrdenacao = 'desc';
+// Em foodUnits (linha ~1125):
+'Filé Mignon': {
+  unit: 'gramas',
+  gramsPerUnit: 1,
+  maxUnits: 200,  // máx 200g por refeição
+  displayName: 'g'
+}
 ```
 
-### Task 3: Adjust Protein Multiplier
+### Tarefa 3: Alterar Ordem de Ordenação Padrão
 
 ```javascript
-// Line 333 in atualizarGlobal():
-const meta = (peso * 2.2).toFixed(0); // Changed from 2.0 to 2.2
-
-// Line 464 in calcularDieta():
-const metaTotal = peso * 2.2; // Changed from 2.0 to 2.2
+// Na função renderFoodsTable(), modificar sort inicial:
+const sortedFoods = [...foodsDatabase].sort((a, b) => b.proteina - a.proteina);
+// Ordena por proteína descendente como padrão
 ```
 
-### Task 4: Add New Category
+### Tarefa 4: Adicionar Nova Categoria
 
 ```javascript
-// 1. Add food with new category to dados array
-{ id: 15, fonte: 'Lentilhas', categoria: 'leguminosa', ... }
+// 1. Adicionar alimento com nova categoria em foodsDatabase
+{ id: 33, nome: 'Lentilha', categoria: 'leguminosa', ... }
 
-// 2. Add filter button in HTML (line ~254):
-<button class="filter-btn" onclick="filtrarCategoria('leguminosa')">🥜 Legum.</button>
+// 2. Adicionar badge CSS (se necessário)
+.badge-leguminosa { background: #8b4513; color: white; }
+
+// 3. Adicionar filtro na UI (modificar HTML)
+<button class="filter-btn" onclick="filterCategory('leguminosa')">
+  🌱 Leguminosas
+</button>
 ```
 
-### Task 5: Modify Meal Distribution
+### Tarefa 5: Modificar Cores do Tema
 
-```javascript
-// Line 315 - adjust weight values (must sum to 1.0):
-const mealsConfig = [
-  { key: 'cafe', label: '☕ Café da Manhã', weight: 0.20 },      // increased
-  { key: 'lancheManha', label: '🍎 Lanche Manhã', weight: 0.10 },
-  { key: 'almoco', label: '🍽️ Almoço', weight: 0.25 },           // decreased
-  { key: 'lancheTarde', label: '🪪 Lanche Tarde', weight: 0.10 },
-  { key: 'jantar', label: '🍲 Jantar', weight: 0.25 },
-  { key: 'ceia', label: '🌙 Ceia', weight: 0.10 }
-];
-```
-
-### Task 6: Change Theme Colors
-
-```javascript
-// Lines 9-35 - modify CSS variables
+```css
+/* Lines 9-35 - modificar CSS variables */
 :root[data-theme="dark"] {
-  --primary: #4ade80;      // Change primary color
-  --bg: #0a0a0a;          // Darker background
-  --surface: #1a1a1a;     // Darker surface
-  --text: #ffffff;        // Brighter text
+  --primary: #00ffff;      /* Mudar cor primária para cyan */
+  --bg: #000000;           /* Fundo mais escuro */
+  --surface: #1a1a1a;      /* Surface mais claro */
 }
 ```
 
-## Important Notes for AI Assistants
+### Tarefa 6: Adicionar Nova Receita
 
-### Critical Rules
+```javascript
+// Em recipes array (linha ~1750+):
+{
+  id: 11,
+  titulo: 'Bolinho de Batata Doce com Atum',
+  categoria: 'Lanche',
+  tempo: '25 min',
+  ingredientes: [
+    '200g de batata doce cozida e amassada',
+    '1 lata de atum',
+    '1 ovo',
+    'Temperos a gosto'
+  ],
+  preparo: [
+    'Misture todos os ingredientes',
+    'Faça bolinhos',
+    'Asse no forno a 180°C por 20 minutos'
+  ],
+  proteinas: 35,
+  carboidratos: 30,
+  gorduras: 8,
+  calorias: 340
+}
+```
 
-1. **NEVER split the file** - This is intentionally a monolithic single-file app
-2. **Test in browser** - Changes cannot be validated without visual inspection
-3. **Preserve Portuguese** - All user-facing text must remain in Portuguese
-4. **Maintain data structure** - Don't change object schemas without updating all usages
-5. **Calculate custoProteina** - Always compute `custo / proteina` when adding food items
-6. **Sum weights to 1.0** - Meal weights must always total 100%
-7. **Use Unicode escapes for emojis** in JavaScript strings for WhatsApp (not literal emojis)
-8. **Commit messages in Portuguese** - Follow existing commit style
+## Notas Importantes para AI Assistants
 
-### Common Pitfalls
+### Regras Críticas
 
-❌ **Don't:** Create separate .js, .css files
-✅ **Do:** Edit the embedded code in index.html
+1. **NUNCA dividir o arquivo** - Esta é intencionalmente uma app monolítica single-file
+2. **Testar no navegador** - Mudanças não podem ser validadas sem inspeção visual
+3. **Preservar português** - Todo texto user-facing DEVE permanecer em português
+4. **Manter estrutura de dados** - Não mudar schemas sem atualizar todos os usos
+5. **Formato WhatsApp** - Usar `\n` (quebra real), não `\\n` (escape literal)
+6. **Emojis WhatsApp** - Usar emojis literais, não códigos Unicode
+7. **Limites realistas** - Sempre aplicar via `calculateRealGrams()`
+8. **Histórico completo** - Salvar plano detalhado, não apenas IDs
+9. **Mensagens de commit em português** - Seguir estilo existente
 
-❌ **Don't:** Add dependencies or npm packages
-✅ **Do:** Use vanilla JavaScript only
+### Armadilhas Comuns
 
-❌ **Don't:** Assume data persists across page reloads
-✅ **Do:** Understand this is session-only state
+❌ **Não fazer:** Criar arquivos .js, .css separados
+✅ **Fazer:** Editar código incorporado em index.html
 
-❌ **Don't:** Use English in user-facing text
-✅ **Do:** Keep all UI text in Portuguese
+❌ **Não fazer:** Adicionar dependências ou npm packages
+✅ **Fazer:** Usar apenas JavaScript vanilla
 
-❌ **Don't:** Add build tools or transpilation
-✅ **Do:** Write browser-compatible ES6+ code directly
+❌ **Não fazer:** Usar inglês em texto user-facing
+✅ **Fazer:** Manter todo UI text em português
 
-### Best Practices
+❌ **Não fazer:** Usar `\\n` em mensagens WhatsApp
+✅ **Fazer:** Usar `\n` (quebra de linha real)
 
-1. **Before editing:** Read the entire function to understand context
-2. **After editing:** Check for side effects in other functions
-3. **Emoji handling:** Use Unicode escapes (`\uD83C\uDF7D\uFE0F`) for WhatsApp, HTML entities (`&#x1F4CA;`) for HTML
-4. **Testing:** Always provide manual testing steps for changes
-5. **Documentation:** Update this file when making architectural changes
-6. **Protein calculations:** Double-check math for accuracy
-7. **Responsive design:** Test changes on mobile viewports
+❌ **Não fazer:** Salvar apenas IDs no histórico
+✅ **Fazer:** Salvar estrutura detalhada completa
 
-### When Making Changes
+❌ **Não fazer:** Assumir que dados persistem sem localStorage
+✅ **Fazer:** Entender o que é session-only vs persistido
 
-**Always verify:**
-- [ ] Code is valid ES6+ JavaScript
-- [ ] HTML structure is semantically correct
-- [ ] CSS doesn't break existing layout
-- [ ] All text is in Portuguese (except code)
-- [ ] Emojis render correctly in both UI and WhatsApp
-- [ ] Math calculations are accurate
-- [ ] No console errors
-- [ ] Mobile layout still works
-- [ ] Theme switching still works
-- [ ] Data structure integrity maintained
+❌ **Não fazer:** Adicionar build tools ou transpilação
+✅ **Fazer:** Escrever código ES6+ compatível com navegadores
+
+### Melhores Práticas
+
+1. **Antes de editar:** Ler função inteira para entender contexto
+2. **Depois de editar:** Verificar side effects em outras funções
+3. **Formato de dados:** Sempre fornecer estrutura completa
+4. **Testes:** Sempre fornecer passos de testes manuais para mudanças
+5. **Documentação:** Atualizar este arquivo ao fazer mudanças arquiteturais
+6. **Cálculos:** Double-check matemática para precisão
+7. **Design responsivo:** Testar mudanças em viewports mobile
+8. **Compatibilidade:** Manter compatibilidade com dados antigos quando possível
+
+### Ao Fazer Mudanças, Sempre Verificar
+
+- [ ] Código é ES6+ JavaScript válido
+- [ ] Estrutura HTML está semanticamente correta
+- [ ] CSS não quebra layout existente
+- [ ] Todo texto está em português (exceto código)
+- [ ] Emojis renderizam corretamente em UI e WhatsApp
+- [ ] Cálculos matemáticos estão precisos
+- [ ] Sem erros no console do navegador
+- [ ] Layout mobile ainda funciona
+- [ ] Alternância de tema ainda funciona
+- [ ] Integridade da estrutura de dados mantida
+- [ ] LocalStorage funcionando corretamente
+- [ ] Formatação WhatsApp está correta
 
 ### Debugging Tips
 
-1. **Open browser console** - Check for JavaScript errors
-2. **Inspect element** - Verify CSS is applied correctly
-3. **Check data flow:**
-   - Is weight input updating `metaProteinaDisplay`?
-   - Is table rendering with correct data?
-   - Are calculations producing expected results?
-4. **Test sorting/filtering** - Verify array operations work correctly
-5. **Validate WhatsApp links** - Test actual sharing to ensure encoding is correct
+1. **Abrir console do navegador** - Verificar erros JavaScript
+2. **Inspecionar elemento** - Verificar CSS aplicado corretamente
+3. **Verificar fluxo de dados:**
+   - Peso inputado atualiza `userMacros`?
+   - Tabela renderiza com dados corretos?
+   - Cálculos produzem resultados esperados?
+   - Histórico salva estrutura completa?
+4. **Testar ordenação/filtragem** - Verificar operações de array
+5. **Validar links WhatsApp** - Testar compartilhamento real para garantir encoding
+6. **Verificar localStorage** - DevTools > Application > Local Storage
+7. **Testar formatação** - Enviar mensagem WhatsApp de teste
 
-## Additional Resources
+## Recursos Adicionais
 
-### Referenced Standards
-- **Protein intake:** [ISSN Guidelines (1.6-2.2g/kg)](https://link.springer.com/article/10.1186/s12970-018-0215-1)
-- **Language:** Portuguese (Brazil) - pt-BR
-- **Currency:** Brazilian Real (R$)
+### Padrões Referenciados
+- **Ingestão de proteína:** [Diretrizes ISSN (1.6-2.2g/kg)](https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8)
+- **Fórmula TMB:** [Mifflin-St Jeor (PubMed)](https://pubmed.ncbi.nlm.nih.gov/2305711/)
+- **Fatores de atividade:** [Harris-Benedict (PNAS)](https://www.pnas.org/doi/10.1073/pnas.1305908110)
+- **Idioma:** Português (Brasil) - pt-BR
+- **Moeda:** Real Brasileiro (R$)
 
-### Useful Links
-- HTML5 Spec: https://html.spec.whatwg.org/
-- MDN JavaScript Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript
-- CSS Custom Properties: https://developer.mozilla.org/en-US/docs/Web/CSS/--*
-- WhatsApp API: https://faq.whatsapp.com/5913398998672934/
+### Links Úteis
+- Especificação HTML5: https://html.spec.whatwg.org/
+- Referência JavaScript MDN: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript
+- CSS Custom Properties: https://developer.mozilla.org/pt-BR/docs/Web/CSS/--*
+- API WhatsApp: https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat
+- LocalStorage API: https://developer.mozilla.org/pt-BR/docs/Web/API/Window/localStorage
 
-## Version History
+## Histórico de Versões
 
-**Current Version:** Latest commit on branch `claude/add-claude-documentation-0yi0K`
+**Versão Atual:** Commit mais recente em `claude/add-claude-documentation-0yi0K`
 
-**Recent Notable Changes:**
-- Fix: WhatsApp button converted to direct link (href) instead of onclick
-- Fix: Emoji encoding for WhatsApp using Unicode escapes
-- Feature: Separate text formatting for screen display vs WhatsApp
-- Feature: Bidirectional sorting (Asc/Desc) on table columns
-- Feature: Dark theme as default with dynamic rebalancing
+**Mudanças Recentes Notáveis:**
+- **2026-01-22:** Salva plano completo no histórico e corrige formatação WhatsApp
+- **2026-01-22:** Adiciona seleção de 2 proteínas e visualização detalhada do histórico
+- **2026-01-22:** Implementa planejador inteligente de refeições com sugestões automáticas
+- **2026-01-21:** Adiciona referências científicas à Calculadora de Macros
+- **2026-01-21:** TRANSFORMAÇÃO RADICAL: ProteínaMax - App Nutricional Completo 🚀
+  - Expansão de 14 para 32 alimentos
+  - Adição de calculadora TMB/TDEE
+  - Dashboard visual
+  - Sistema de favoritos
+  - Comparador de alimentos
+  - 10 receitas proteicas
+  - Histórico de planos
+  - Sistema de planejamento inteligente
 
-**Development Status:** Active
-**Last Updated:** 2026-01-21
-
----
-
-## Quick Reference Card
-
-**File:** `index.html` only
-**Language:** Portuguese (pt-BR)
-**Framework:** None (Vanilla JS)
-**Dependencies:** None
-**Build Process:** None
-**Testing:** Manual only
-**Deployment:** Static hosting
-
-**Key Functions:**
-- `atualizarGlobal()` - Update protein goal display
-- `calcularDieta()` - Calculate meal plan
-- `renderizarTabela()` - Render protein table
-- `ordenar(campo)` - Sort table by column
-- `filtrarCategoria(cat)` - Filter by category
-- `toggleTheme()` - Switch light/dark theme
-
-**Data Arrays:**
-- `dados` (line 298) - 14 protein sources
-- `mealsConfig` (line 315) - 6 daily meals
-
-**State Variables:**
-- `filtroCategoriaAtual` - Current filter
-- `ordenacaoAtual` - Current sort column
-- `direcaoOrdenacao` - Sort direction (asc/desc)
-- `currentTheme` - Current theme (light/dark)
+**Status de Desenvolvimento:** Ativo
+**Última Atualização deste Documento:** 2026-01-22
 
 ---
 
-*This documentation is maintained for AI assistants working on this codebase. Keep it updated when making significant changes.*
+## Cartão de Referência Rápida
+
+**Arquivo:** `index.html` apenas
+**Idioma:** Português (pt-BR)
+**Framework:** Nenhum (Vanilla JS)
+**Dependências:** Nenhuma
+**Build Process:** Nenhum
+**Testes:** Manuais apenas
+**Deploy:** Hospedagem estática
+
+**Funções-Chave:**
+- `calculateMacros()` - Calcular TMB/TDEE e macros
+- `renderFoodsTable()` - Renderizar tabela de alimentos
+- `initMealPlanner()` - Inicializar planejador
+- `calculateSmartMealPlan()` - Gerar plano inteligente
+- `savePlanToHistory()` - Salvar no histórico
+- `viewHistoryDetails(index)` - Ver detalhes do plano
+- `shareHistoryToWhatsApp(index)` - Compartilhar no WhatsApp
+- `formatQuantity()` - Formatar com unidade correta
+- `calculateRealGrams()` - Aplicar limites realistas
+
+**Arrays de Dados:**
+- `foodsDatabase` (linha ~850) - 32 alimentos
+- `carbsDatabase` (linha ~1150) - 12 carboidratos
+- `fatsDatabase` (linha ~1200) - 10 gorduras
+- `foodUnits` (linha ~1125) - Unidades e limites
+- `mealSuggestions` (linha ~1250) - Sugestões contextuais
+
+**Variáveis de Estado:**
+- `userMacros` - Metas calculadas do usuário
+- `favorites` - IDs favoritos (localStorage)
+- `history` - Planos salvos (localStorage, máx 30)
+- `currentTheme` - Tema atual
+- `window.currentPlan` - Plano gerado atual
+
+---
+
+*Esta documentação é mantida para assistentes de IA trabalhando neste codebase. Mantenha-a atualizada ao fazer mudanças significativas.*
