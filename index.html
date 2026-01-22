@@ -2080,6 +2080,7 @@
             planHTML += '<p style="font-size: 13px; color: var(--text-sec); margin-bottom: 20px;">Plano gerado automaticamente com quantidades realistas e sugestões balanceadas</p>';
 
             let totalProtein = 0, totalCarbs = 0, totalFat = 0, totalCalories = 0, totalCost = 0;
+            const detailedMeals = []; // Array para armazenar detalhes completos das refeições
 
             meals.forEach(meal => {
                 const proteinIds = selectedProteins[meal.key];
@@ -2234,6 +2235,41 @@
                         </div>
                     </div>
                 `;
+
+                // Armazenar detalhes completos da refeição
+                detailedMeals.push({
+                    key: meal.key,
+                    label: meal.label,
+                    proteins: proteinItems.map(item => ({
+                        id: item.protein.id,
+                        nome: item.protein.nome,
+                        quantidade: formatQuantity(item.protein.nome, item.realProteinGrams),
+                        grams: item.realProteinGrams,
+                        macros: {
+                            proteina: item.actualProteinMacros.toFixed(1),
+                            carbs: item.actualProteinCarbs.toFixed(1),
+                            gordura: item.actualProteinFat.toFixed(1)
+                        }
+                    })),
+                    carb: suggestedCarb && carbGrams > 0 ? {
+                        nome: suggestedCarb.nome,
+                        quantidade: carbGrams.toFixed(0) + 'g',
+                        macros: actualCarbMacros.toFixed(1) + 'g carb',
+                        calorias: actualCarbCal.toFixed(0) + ' kcal'
+                    } : null,
+                    fat: suggestedFat && fatGrams > 0 ? {
+                        nome: suggestedFat.nome,
+                        quantidade: fatGrams.toFixed(0) + 'g',
+                        macros: actualFatMacros.toFixed(1) + 'g gord',
+                        calorias: actualFatCal.toFixed(0) + ' kcal'
+                    } : null,
+                    totals: {
+                        proteina: mealTotalProt.toFixed(0),
+                        carbs: mealTotalCarbs.toFixed(0),
+                        gordura: mealTotalFat.toFixed(0),
+                        calorias: mealTotalCal.toFixed(0)
+                    }
+                });
             });
 
             // Resumo final
@@ -2282,7 +2318,7 @@
             document.getElementById('plan-results').style.display = 'block';
             document.getElementById('plan-results').scrollIntoView({ behavior: 'smooth' });
 
-            // Armazenar plano atual
+            // Armazenar plano atual com detalhes completos
             window.currentPlan = {
                 date: new Date().toISOString(),
                 protein: totalProtein.toFixed(0),
@@ -2290,7 +2326,7 @@
                 fat: totalFat.toFixed(0),
                 calories: totalCalories.toFixed(0),
                 cost: totalCost.toFixed(2),
-                meals: selectedProteins
+                meals: detailedMeals // Plano completo com proteínas, carbs e gorduras
             };
         }
 
@@ -2426,40 +2462,110 @@
 
             // Renderizar cada refeição
             if (plan.meals) {
-                Object.entries(plan.meals).forEach(([mealKey, proteinIds]) => {
-                    const mealLabel = mealLabels[mealKey] || mealKey;
+                // Verificar se é o novo formato (array de objetos detalhados) ou antigo (object com IDs)
+                const isDetailedFormat = Array.isArray(plan.meals);
 
-                    detailsHTML += `
-                        <div style="background: var(--surface); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary);">
-                            <div style="font-weight: 600; margin-bottom: 8px; color: var(--primary);">${mealLabel}</div>
-                    `;
+                if (isDetailedFormat) {
+                    // Novo formato com detalhes completos
+                    plan.meals.forEach(meal => {
+                        detailsHTML += `
+                            <div style="background: var(--surface); padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <div style="font-weight: 600; color: var(--primary);">${meal.label}</div>
+                                    <span style="font-size: 11px; background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-weight: 600;">
+                                        ${meal.totals.calorias} kcal
+                                    </span>
+                                </div>
+                        `;
 
-                    // Se proteinIds é um array (nova versão)
-                    if (Array.isArray(proteinIds)) {
-                        proteinIds.forEach(proteinId => {
-                            const protein = foodsDatabase.find(f => f.id === proteinId);
+                        // Proteínas
+                        meal.proteins.forEach(prot => {
+                            detailsHTML += `
+                                <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--primary);">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                        <strong style="color: var(--primary); font-size: 13px;">🥩 ${prot.nome}</strong>
+                                        <strong style="font-size: 13px;">${prot.quantidade}</strong>
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-sec);">
+                                        ${prot.macros.proteina}g prot | ${prot.macros.carbs}g carb | ${prot.macros.gordura}g gord
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        // Carboidrato
+                        if (meal.carb) {
+                            detailsHTML += `
+                                <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--accent);">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                        <span style="color: var(--accent); font-size: 13px;">🍚 ${meal.carb.nome}</span>
+                                        <span style="font-size: 13px;">${meal.carb.quantidade}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-sec);">
+                                        ${meal.carb.macros} | ${meal.carb.calorias}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        // Gordura
+                        if (meal.fat) {
+                            detailsHTML += `
+                                <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--danger);">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                        <span style="color: var(--danger); font-size: 13px;">🥑 ${meal.fat.nome}</span>
+                                        <span style="font-size: 13px;">${meal.fat.quantidade}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-sec);">
+                                        ${meal.fat.macros} | ${meal.fat.calorias}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        // Totais da refeição
+                        detailsHTML += `
+                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-sec);">
+                                    <strong>Total:</strong> ${meal.totals.proteina}g prot | ${meal.totals.carbs}g carb | ${meal.totals.gordura}g gord
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    // Formato antigo (compatibilidade)
+                    Object.entries(plan.meals).forEach(([mealKey, proteinIds]) => {
+                        const mealLabel = mealLabels[mealKey] || mealKey;
+
+                        detailsHTML += `
+                            <div style="background: var(--surface); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--primary);">
+                                <div style="font-weight: 600; margin-bottom: 8px; color: var(--primary);">${mealLabel}</div>
+                        `;
+
+                        if (Array.isArray(proteinIds)) {
+                            proteinIds.forEach(proteinId => {
+                                const protein = foodsDatabase.find(f => f.id === proteinId);
+                                if (protein) {
+                                    detailsHTML += `
+                                        <div style="font-size: 13px; color: var(--text); margin-left: 12px; margin-bottom: 4px;">
+                                            🥩 ${protein.nome}
+                                        </div>
+                                    `;
+                                }
+                            });
+                        } else {
+                            const protein = foodsDatabase.find(f => f.id === proteinIds);
                             if (protein) {
                                 detailsHTML += `
-                                    <div style="font-size: 13px; color: var(--text); margin-left: 12px; margin-bottom: 4px;">
+                                    <div style="font-size: 13px; color: var(--text); margin-left: 12px;">
                                         🥩 ${protein.nome}
                                     </div>
                                 `;
                             }
-                        });
-                    } else {
-                        // Compatibilidade com versão antiga (proteinId único)
-                        const protein = foodsDatabase.find(f => f.id === proteinIds);
-                        if (protein) {
-                            detailsHTML += `
-                                <div style="font-size: 13px; color: var(--text); margin-left: 12px;">
-                                    🥩 ${protein.nome}
-                                </div>
-                            `;
                         }
-                    }
 
-                    detailsHTML += `</div>`;
-                });
+                        detailsHTML += `</div>`;
+                    });
+                }
             }
 
             // Botão de compartilhar no WhatsApp
@@ -2489,48 +2595,80 @@
             const date = new Date(plan.date);
             const dateStr = date.toLocaleDateString('pt-BR');
 
-            let message = `*🎯 MEU PLANO ALIMENTAR* \\n`;
-            message += `📅 Data: ${dateStr}\\n\\n`;
-            message += `*📊 RESUMO NUTRICIONAL*\\n`;
-            message += `🥩 Proteínas: ${plan.protein}g\\n`;
-            message += `🍚 Carboidratos: ${plan.carbs}g\\n`;
-            message += `🥑 Gorduras: ${plan.fat}g\\n`;
-            message += `🔥 Calorias: ${plan.calories} kcal\\n`;
-            message += `💰 Custo/dia: R$ ${plan.cost}\\n\\n`;
-            message += `*🍽️ REFEIÇÕES*\\n`;
-
-            const mealLabels = {
-                'cafe': '\\u2615 Café da Manhã',
-                'lancheManha': '\\uD83C\\uDF4E Lanche da Manhã',
-                'almoco': '\\uD83C\\uDF7D\\uFE0F Almoço',
-                'lancheTarde': '\\uD83E\\uDD6A Lanche da Tarde',
-                'jantar': '\\uD83C\\uDF72 Jantar',
-                'ceia': '\\uD83C\\uDF19 Ceia'
-            };
+            // Usar \n simples (não escapado) para quebras de linha reais
+            let message = `*🎯 MEU PLANO ALIMENTAR*\n`;
+            message += `📅 Data: ${dateStr}\n\n`;
+            message += `*📊 RESUMO NUTRICIONAL*\n`;
+            message += `🥩 Proteínas: ${plan.protein}g\n`;
+            message += `🍚 Carboidratos: ${plan.carbs}g\n`;
+            message += `🥑 Gorduras: ${plan.fat}g\n`;
+            message += `🔥 Calorias: ${plan.calories} kcal\n`;
+            message += `💰 Custo/dia: R$ ${plan.cost}\n\n`;
+            message += `*🍽️ REFEIÇÕES DETALHADAS*\n`;
 
             if (plan.meals) {
-                Object.entries(plan.meals).forEach(([mealKey, proteinIds]) => {
-                    const mealLabel = mealLabels[mealKey] || mealKey;
-                    message += `\\n${mealLabel}:\\n`;
+                const isDetailedFormat = Array.isArray(plan.meals);
 
-                    if (Array.isArray(proteinIds)) {
-                        proteinIds.forEach(proteinId => {
-                            const protein = foodsDatabase.find(f => f.id === proteinId);
-                            if (protein) {
-                                message += `  • ${protein.nome}\\n`;
-                            }
+                if (isDetailedFormat) {
+                    // Novo formato com detalhes completos
+                    plan.meals.forEach(meal => {
+                        message += `\n${meal.label}:\n`;
+
+                        // Proteínas
+                        meal.proteins.forEach(prot => {
+                            message += `  🥩 ${prot.nome} - ${prot.quantidade}\n`;
+                            message += `     ${prot.macros.proteina}g prot | ${prot.macros.carbs}g carb | ${prot.macros.gordura}g gord\n`;
                         });
-                    } else {
-                        const protein = foodsDatabase.find(f => f.id === proteinIds);
-                        if (protein) {
-                            message += `  • ${protein.nome}\\n`;
+
+                        // Carboidrato
+                        if (meal.carb) {
+                            message += `  🍚 ${meal.carb.nome} - ${meal.carb.quantidade}\n`;
+                            message += `     ${meal.carb.macros}\n`;
                         }
-                    }
-                });
+
+                        // Gordura
+                        if (meal.fat) {
+                            message += `  🥑 ${meal.fat.nome} - ${meal.fat.quantidade}\n`;
+                            message += `     ${meal.fat.macros}\n`;
+                        }
+
+                        // Total da refeição
+                        message += `  📊 Total: ${meal.totals.proteina}g prot | ${meal.totals.carbs}g carb | ${meal.totals.gordura}g gord | ${meal.totals.calorias} kcal\n`;
+                    });
+                } else {
+                    // Formato antigo (compatibilidade) - apenas proteínas
+                    const mealLabels = {
+                        'cafe': '☕ Café da Manhã',
+                        'lancheManha': '🍎 Lanche da Manhã',
+                        'almoco': '🍽️ Almoço',
+                        'lancheTarde': '🥪 Lanche da Tarde',
+                        'jantar': '🍲 Jantar',
+                        'ceia': '🌙 Ceia'
+                    };
+
+                    Object.entries(plan.meals).forEach(([mealKey, proteinIds]) => {
+                        const mealLabel = mealLabels[mealKey] || mealKey;
+                        message += `\n${mealLabel}:\n`;
+
+                        if (Array.isArray(proteinIds)) {
+                            proteinIds.forEach(proteinId => {
+                                const protein = foodsDatabase.find(f => f.id === proteinId);
+                                if (protein) {
+                                    message += `  • ${protein.nome}\n`;
+                                }
+                            });
+                        } else {
+                            const protein = foodsDatabase.find(f => f.id === proteinIds);
+                            if (protein) {
+                                message += `  • ${protein.nome}\n`;
+                            }
+                        }
+                    });
+                }
             }
 
-            message += `\\n---\\n`;
-            message += `\\uD83D\\uDCAA Gerado pelo ProteínaMax\\n`;
+            message += `\n━━━━━━━━━━━━━━━\n`;
+            message += `💪 Gerado pelo ProteínaMax\n`;
             message += window.location.href;
 
             const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
