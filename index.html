@@ -2114,9 +2114,20 @@
 
                     <div id="meal-planner-container"></div>
 
-                    <button class="btn-pro btn-primary-pro btn-full btn-lg" onclick="calculateSmartMealPlan()">
-                        🧮 Gerar Plano Inteligente
-                    </button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-lg);">
+                        <button class="btn-pro btn-gold btn-lg" onclick="generateAutoPlan()">
+                            ✨ Planejamento Automático
+                        </button>
+                        <button class="btn-pro btn-primary-pro btn-lg" onclick="calculateSmartMealPlan()">
+                            🧮 Gerar Plano Manual
+                        </button>
+                    </div>
+
+                    <div style="background: var(--gold-light); padding: var(--space-md); border-radius: var(--radius-lg); margin-top: var(--space-md); border-left: 4px solid var(--gold);">
+                        <p style="font-size: 13px; color: var(--text-secondary);">
+                            <strong style="color: var(--gold);">✨ Planejamento Automático:</strong> Usa seus <strong>alimentos favoritos</strong> para criar um plano realista e equilibrado automaticamente. Adicione favoritos na aba Alimentos!
+                        </p>
+                    </div>
 
                     <div id="plan-results" style="display: none; margin-top: var(--space-xl);"></div>
                 </div>
@@ -2920,6 +2931,287 @@
 
             window.currentPlan = { date: new Date().toISOString(), protein: totalProt.toFixed(0), carbs: totalCarbs.toFixed(0), fat: totalFat.toFixed(0), calories: totalCal.toFixed(0), cost: totalCost.toFixed(2), meals: detailedMeals };
             addXP(25);
+        }
+
+        // === PLANEJAMENTO AUTOMÁTICO INTELIGENTE ===
+        function generateAutoPlan() {
+            if (!userMacros) {
+                showToast('warning', 'Configure seus macros', 'Vá até a Calculadora primeiro.');
+                switchTab('calculator');
+                return;
+            }
+
+            // Regras de contexto: quais alimentos são apropriados para cada refeição
+            const mealContext = {
+                cafe: {
+                    allowed: ['suplemento', 'laticinio', 'outros'], // Whey, iogurte, ovos, cottage
+                    forbidden: ['carne', 'peixe'], // Não faz sentido bife no café
+                    preferredNames: ['Whey Protein', 'Ovo Inteiro Cozido', 'Ovo Mexido', 'Clara de Ovo', 'Iogurte Grego Natural', 'Queijo Cottage', 'Queijo Minas Frescal']
+                },
+                lancheManha: {
+                    allowed: ['suplemento', 'laticinio', 'outros'],
+                    forbidden: ['carne', 'peixe', 'frango'],
+                    preferredNames: ['Whey Protein', 'Iogurte Grego Natural', 'Queijo Cottage', 'Barra de Proteína', 'Pasta de Amendoim', 'Clara de Ovo']
+                },
+                almoco: {
+                    allowed: ['carne', 'frango', 'peixe', 'vegetal', 'outros'],
+                    forbidden: ['suplemento'], // Não tomar whey no almoço
+                    preferredNames: ['Peito de Frango Grelhado', 'Patinho Bovino', 'Alcatra', 'Tilápia', 'Salmão', 'Frango Desfiado', 'Filé Mignon', 'Contra-Filé']
+                },
+                lancheTarde: {
+                    allowed: ['suplemento', 'laticinio', 'outros', 'vegetal'],
+                    forbidden: ['carne', 'peixe'],
+                    preferredNames: ['Whey Protein', 'Iogurte Grego Natural', 'Queijo Cottage', 'Ovo Inteiro Cozido', 'Pasta de Amendoim', 'Barra de Proteína']
+                },
+                jantar: {
+                    allowed: ['carne', 'frango', 'peixe', 'vegetal', 'laticinio', 'outros'],
+                    forbidden: ['suplemento'],
+                    preferredNames: ['Peito de Frango Grelhado', 'Tilápia', 'Salmão', 'Patinho Bovino', 'Alcatra', 'Ovo Inteiro Cozido', 'Sardinha', 'Merluza']
+                },
+                ceia: {
+                    allowed: ['suplemento', 'laticinio', 'outros'],
+                    forbidden: ['carne', 'frango', 'peixe'], // Digestão lenta antes de dormir
+                    preferredNames: ['Caseína', 'Queijo Cottage', 'Iogurte Grego Natural', 'Clara de Ovo', 'Ricota']
+                }
+            };
+
+            // Limites realistas por tipo de alimento (máximo por refeição)
+            const realisticLimits = {
+                'Ovo Inteiro Cozido': { maxGrams: 150, maxUnits: 3, unit: 'ovos' },
+                'Ovo Mexido': { maxGrams: 150, maxUnits: 3, unit: 'ovos' },
+                'Clara de Ovo': { maxGrams: 200, maxUnits: 6, unit: 'claras' },
+                'Whey Protein': { maxGrams: 60, maxUnits: 2, unit: 'scoops' },
+                'Albumina': { maxGrams: 60, maxUnits: 2, unit: 'scoops' },
+                'Caseína': { maxGrams: 60, maxUnits: 2, unit: 'scoops' },
+                'Queijo Cottage': { maxGrams: 100, maxUnits: 4, unit: 'colheres' },
+                'Pasta de Amendoim': { maxGrams: 30, maxUnits: 2, unit: 'colheres' },
+                'Iogurte Grego Natural': { maxGrams: 200, maxUnits: 1, unit: 'pote' },
+                'Barra de Proteína': { maxGrams: 60, maxUnits: 1, unit: 'unidade' },
+                // Carnes/peixes: porções normais de 100-200g
+                'default_meat': { maxGrams: 200 },
+                'default_fish': { maxGrams: 180 }
+            };
+
+            const meals = [
+                { key: 'cafe', label: '☕ Café da Manhã', weight: 0.20 },
+                { key: 'lancheManha', label: '🍎 Lanche da Manhã', weight: 0.10 },
+                { key: 'almoco', label: '🍽️ Almoço', weight: 0.30 },
+                { key: 'lancheTarde', label: '🥪 Lanche da Tarde', weight: 0.10 },
+                { key: 'jantar', label: '🍲 Jantar', weight: 0.25 },
+                { key: 'ceia', label: '🌙 Ceia', weight: 0.05 }
+            ];
+
+            // Função para verificar se alimento é apropriado para a refeição
+            function isFoodAppropriate(food, mealKey) {
+                const context = mealContext[mealKey];
+                if (context.forbidden.includes(food.categoria)) return false;
+                if (context.allowed.includes(food.categoria)) return true;
+                return false;
+            }
+
+            // Função para obter alimentos disponíveis para uma refeição (prioriza favoritos)
+            function getAvailableFoods(mealKey) {
+                const context = mealContext[mealKey];
+
+                // Primeiro: favoritos que são apropriados para esta refeição
+                const favoriteFoods = favorites
+                    .map(id => foodsDatabase.find(f => f.id === id))
+                    .filter(f => f && isFoodAppropriate(f, mealKey) && f.proteina >= 8);
+
+                // Se tem favoritos apropriados, usa eles
+                if (favoriteFoods.length > 0) return favoriteFoods;
+
+                // Senão: usa os alimentos preferidos para esta refeição
+                const preferredFoods = context.preferredNames
+                    .map(name => foodsDatabase.find(f => f.nome === name))
+                    .filter(f => f && f.proteina >= 8);
+
+                return preferredFoods.length > 0 ? preferredFoods :
+                    foodsDatabase.filter(f => isFoodAppropriate(f, mealKey) && f.proteina >= 8);
+            }
+
+            // Função para calcular gramas com limite realista
+            function getRealisticGrams(food, targetGrams) {
+                const limit = realisticLimits[food.nome];
+                if (limit) return Math.min(targetGrams, limit.maxGrams);
+
+                // Limites padrão por categoria
+                if (food.categoria === 'carne') return Math.min(targetGrams, 200);
+                if (food.categoria === 'frango') return Math.min(targetGrams, 200);
+                if (food.categoria === 'peixe') return Math.min(targetGrams, 180);
+                if (food.categoria === 'suplemento') return Math.min(targetGrams, 60);
+
+                return Math.min(targetGrams, 150); // Limite padrão
+            }
+
+            // Gerar plano
+            let totalProt = 0, totalCarbs = 0, totalFat = 0, totalCal = 0, totalCost = 0;
+            const detailedMeals = [];
+            const usedFoodsToday = new Set(); // Evitar repetir o mesmo alimento em refeições seguidas
+
+            let planHTML = '<h3 style="margin-bottom: var(--space-lg); color: var(--gold);">✨ Plano Automático Gerado</h3>';
+
+            if (favorites.length > 0) {
+                planHTML += `<div style="background: var(--gold-light); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); margin-bottom: var(--space-lg); font-size: 13px; color: var(--text-secondary);">
+                    <strong style="color: var(--gold);">⭐ Usando seus ${favorites.length} favoritos</strong> como base do plano!
+                </div>`;
+            }
+
+            meals.forEach((meal, mealIndex) => {
+                const mealProtTarget = userMacros.protein * meal.weight;
+                const mealCarbsTarget = userMacros.carbs * meal.weight;
+                const mealFatTarget = userMacros.fat * meal.weight;
+
+                // Obter alimentos disponíveis para esta refeição
+                let availableFoods = getAvailableFoods(meal.key);
+
+                // Tentar não repetir alimentos usados nas últimas 2 refeições
+                const freshFoods = availableFoods.filter(f => !usedFoodsToday.has(f.id));
+                if (freshFoods.length > 0) availableFoods = freshFoods;
+
+                // Selecionar 1 ou 2 proteínas dependendo do tamanho da refeição
+                const numProteins = meal.weight >= 0.25 ? 2 : 1;
+                const selectedProteins = [];
+
+                for (let i = 0; i < Math.min(numProteins, availableFoods.length); i++) {
+                    // Escolher aleatoriamente entre os disponíveis para variedade
+                    const randomIndex = Math.floor(Math.random() * availableFoods.length);
+                    const protein = availableFoods[randomIndex];
+                    selectedProteins.push(protein);
+                    availableFoods = availableFoods.filter(f => f.id !== protein.id);
+                    usedFoodsToday.add(protein.id);
+                }
+
+                // Limpar alimentos usados há mais de 3 refeições
+                if (mealIndex >= 3) {
+                    usedFoodsToday.clear();
+                }
+
+                const protPerSource = mealProtTarget / selectedProteins.length;
+                const proteinItems = [];
+                let actualProt = 0, actualCarbs = 0, actualFat = 0, actualCal = 0, actualCost = 0;
+
+                selectedProteins.forEach(prot => {
+                    let grams = (protPerSource / prot.proteina) * 100;
+                    grams = getRealisticGrams(prot, grams);
+
+                    const p = (grams / 100) * prot.proteina;
+                    const c = (grams / 100) * prot.carbs;
+                    const g = (grams / 100) * prot.gordura;
+                    const cal = (grams / 100) * prot.calorias;
+                    const cost = (grams / 100) * prot.custo;
+
+                    actualProt += p; actualCarbs += c; actualFat += g; actualCal += cal; actualCost += cost;
+                    proteinItems.push({ protein: prot, grams, p, c, g });
+                });
+
+                // Sugestões de carbs e gorduras
+                const suggestions = mealSuggestions[meal.key] || mealSuggestions.almoco;
+                const carbName = suggestions.carbs[Math.floor(Math.random() * suggestions.carbs.length)];
+                const fatName = suggestions.fats[Math.floor(Math.random() * suggestions.fats.length)];
+                const carbFood = carbsDatabase.find(c => c.nome === carbName);
+                const fatFood = fatsDatabase.find(f => f.nome === fatName);
+
+                let carbGrams = 0, fatGrams = 0, carbMacros = 0, fatMacros = 0;
+                if (carbFood && mealCarbsTarget - actualCarbs > 5) {
+                    carbGrams = Math.min(((mealCarbsTarget - actualCarbs) / carbFood.carbs) * 100, 200);
+                    carbMacros = (carbGrams / 100) * carbFood.carbs;
+                    actualCarbs += carbMacros;
+                    actualCal += (carbGrams / 100) * carbFood.calorias;
+                }
+                if (fatFood && mealFatTarget - actualFat > 2) {
+                    fatGrams = Math.min(((mealFatTarget - actualFat) / fatFood.gordura) * 100, 30);
+                    fatMacros = (fatGrams / 100) * fatFood.gordura;
+                    actualFat += fatMacros;
+                    actualCal += (fatGrams / 100) * fatFood.calorias;
+                }
+
+                totalProt += actualProt; totalCarbs += actualCarbs; totalFat += actualFat; totalCal += actualCal; totalCost += actualCost;
+
+                // Renderizar HTML da refeição
+                planHTML += `<div class="card-pro" style="margin-bottom: var(--space-md); border-left: 3px solid var(--gold);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-md);">
+                        <h4 style="color: var(--gold);">${meal.label}</h4>
+                        <span style="color: var(--text-secondary);">${actualCal.toFixed(0)} kcal</span>
+                    </div>`;
+
+                proteinItems.forEach(item => {
+                    const isFavorite = favorites.includes(item.protein.id);
+                    planHTML += `<div style="background: var(--bg-base); padding: var(--space-md); border-radius: var(--radius-md); margin-bottom: var(--space-sm); border-left: 3px solid var(--primary);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: var(--primary);">🥩 ${item.protein.nome} ${isFavorite ? '⭐' : ''}</strong>
+                            <span>${formatQuantity(item.protein.nome, item.grams)}</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${item.p.toFixed(1)}g prot | ${item.c.toFixed(1)}g carb | ${item.g.toFixed(1)}g gord</div>
+                    </div>`;
+                });
+
+                if (carbFood && carbGrams > 0) {
+                    planHTML += `<div style="background: var(--bg-base); padding: var(--space-md); border-radius: var(--radius-md); margin-bottom: var(--space-sm); border-left: 3px solid var(--accent);">
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--accent);">🍚 ${carbFood.nome}</span><span>${carbGrams.toFixed(0)}g</span></div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${carbMacros.toFixed(1)}g carb</div>
+                    </div>`;
+                }
+
+                if (fatFood && fatGrams > 0) {
+                    planHTML += `<div style="background: var(--bg-base); padding: var(--space-md); border-radius: var(--radius-md); margin-bottom: var(--space-sm); border-left: 3px solid var(--danger);">
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--danger);">🥑 ${fatFood.nome}</span><span>${fatGrams.toFixed(0)}g</span></div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${fatMacros.toFixed(1)}g gord</div>
+                    </div>`;
+                }
+
+                planHTML += `<div style="font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-default); padding-top: var(--space-sm); margin-top: var(--space-sm);">
+                    <strong>Total:</strong> ${actualProt.toFixed(0)}g prot | ${actualCarbs.toFixed(0)}g carb | ${actualFat.toFixed(0)}g gord
+                </div></div>`;
+
+                detailedMeals.push({
+                    key: meal.key, label: meal.label,
+                    proteins: proteinItems.map(i => ({
+                        id: i.protein.id,
+                        nome: i.protein.nome,
+                        quantidade: formatQuantity(i.protein.nome, i.grams),
+                        grams: i.grams,
+                        macros: { proteina: i.p.toFixed(1), carbs: i.c.toFixed(1), gordura: i.g.toFixed(1) }
+                    })),
+                    carb: carbFood && carbGrams > 0 ? { nome: carbFood.nome, quantidade: carbGrams.toFixed(0) + 'g', macros: carbMacros.toFixed(1) + 'g carb' } : null,
+                    fat: fatFood && fatGrams > 0 ? { nome: fatFood.nome, quantidade: fatGrams.toFixed(0) + 'g', macros: fatMacros.toFixed(1) + 'g gord' } : null,
+                    totals: { proteina: actualProt.toFixed(0), carbs: actualCarbs.toFixed(0), gordura: actualFat.toFixed(0), calorias: actualCal.toFixed(0) }
+                });
+            });
+
+            // Resumo do dia
+            planHTML += `<div style="background: var(--gradient-gold); padding: var(--space-lg); border-radius: var(--radius-xl); color: var(--text-inverse); margin-top: var(--space-lg);">
+                <h4 style="margin-bottom: var(--space-md); color: var(--text-inverse);">📊 Resumo do Dia</h4>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-md); text-align: center;">
+                    <div><div style="font-size: 28px; font-weight: 800;">${totalProt.toFixed(0)}g</div><div style="font-size: 11px; opacity: 0.9;">Proteínas</div></div>
+                    <div><div style="font-size: 28px; font-weight: 800;">${totalCarbs.toFixed(0)}g</div><div style="font-size: 11px; opacity: 0.9;">Carboidratos</div></div>
+                    <div><div style="font-size: 28px; font-weight: 800;">${totalFat.toFixed(0)}g</div><div style="font-size: 11px; opacity: 0.9;">Gorduras</div></div>
+                    <div><div style="font-size: 28px; font-weight: 800;">${totalCal.toFixed(0)}</div><div style="font-size: 11px; opacity: 0.9;">Calorias</div></div>
+                    <div><div style="font-size: 28px; font-weight: 800;">R$ ${totalCost.toFixed(2)}</div><div style="font-size: 11px; opacity: 0.9;">Custo</div></div>
+                </div>
+                <div style="margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid rgba(0,0,0,0.1); font-size: 12px; text-align: center;">
+                    Meta: ${userMacros.protein}g prot | Atingido: ${((totalProt / userMacros.protein) * 100).toFixed(0)}%
+                </div>
+            </div>
+            <button class="btn-pro btn-secondary-pro btn-full" style="margin-top: var(--space-lg);" onclick="savePlanToHistory()">💾 Salvar no Histórico</button>
+            <button class="btn-pro btn-outline-pro btn-full" style="margin-top: var(--space-sm);" onclick="generateAutoPlan()">🔄 Gerar Novo Plano</button>`;
+
+            document.getElementById('plan-results').innerHTML = planHTML;
+            document.getElementById('plan-results').style.display = 'block';
+            document.getElementById('plan-results').scrollIntoView({ behavior: 'smooth' });
+
+            window.currentPlan = {
+                date: new Date().toISOString(),
+                protein: totalProt.toFixed(0),
+                carbs: totalCarbs.toFixed(0),
+                fat: totalFat.toFixed(0),
+                calories: totalCal.toFixed(0),
+                cost: totalCost.toFixed(2),
+                meals: detailedMeals
+            };
+
+            addXP(30);
+            showToast('success', '✨ Plano gerado!', 'Plano automático criado com sucesso.');
         }
 
         function savePlanToHistory() {
