@@ -2231,6 +2231,14 @@
             'Queijo Cottage': { unit: 'colher', gramsPerUnit: 25, maxUnits: 2, displayName: 'colher de sopa' },
             'Atum Enlatado': { unit: 'gramas', gramsPerUnit: 1, maxUnits: 100, displayName: 'g' },
             'Pasta de Amendoim': { unit: 'colher', gramsPerUnit: 15, maxUnits: 2, displayName: 'colher de sopa' },
+            // Alimentos Centro-Oeste
+            'Linguiça Cuiabana': { unit: 'unidade', gramsPerUnit: 50, maxUnits: 2, displayName: 'unidade' },
+            'Requeijão Cremoso': { unit: 'colher', gramsPerUnit: 25, maxUnits: 2, displayName: 'colher de sopa' },
+            'Queijo Coalho': { unit: 'fatia', gramsPerUnit: 40, maxUnits: 2, displayName: 'fatia' },
+            'Queijo Meia Cura': { unit: 'fatia', gramsPerUnit: 30, maxUnits: 2, displayName: 'fatia' },
+            'Moela de Frango': { unit: 'porção', gramsPerUnit: 100, maxUnits: 1.5, displayName: 'porção' },
+            'Coração de Frango': { unit: 'porção', gramsPerUnit: 100, maxUnits: 1.5, displayName: 'porção' },
+            'Fígado de Frango': { unit: 'porção', gramsPerUnit: 100, maxUnits: 1, displayName: 'porção' },
         };
 
         // === DADOS COMPLETOS ===
@@ -2267,6 +2275,39 @@
             { id: 30, nome: 'Caseína', categoria: 'suplemento', proteina: 24, carbs: 3, gordura: 1, calorias: 117, custo: 4.0, porcao: '30g' },
             { id: 31, nome: 'Barra de Proteína', categoria: 'suplemento', proteina: 20, carbs: 25, gordura: 8, calorias: 252, custo: 8.0, porcao: '60g (1 unid)' },
             { id: 32, nome: 'Pasta de Amendoim', categoria: 'outros', proteina: 25, carbs: 20, gordura: 50, calorias: 588, custo: 2.5, porcao: '100g' },
+            // === CARNES TÍPICAS DO CENTRO-OESTE ===
+            { id: 33, nome: 'Cupim Bovino', categoria: 'carne', proteina: 28, carbs: 0, gordura: 18, calorias: 280, custo: 5.0, porcao: '100g' },
+            { id: 34, nome: 'Costela Bovina', categoria: 'carne', proteina: 24, carbs: 0, gordura: 22, calorias: 300, custo: 4.0, porcao: '100g' },
+            { id: 35, nome: 'Maminha', categoria: 'carne', proteina: 32, carbs: 0, gordura: 8, calorias: 204, custo: 6.5, porcao: '100g' },
+            { id: 36, nome: 'Carne de Sol', categoria: 'carne', proteina: 40, carbs: 0, gordura: 5, calorias: 205, custo: 5.5, porcao: '100g' },
+            { id: 37, nome: 'Carne Seca (Jabá)', categoria: 'carne', proteina: 45, carbs: 0, gordura: 8, calorias: 252, custo: 6.0, porcao: '100g' },
+            { id: 38, nome: 'Linguiça Cuiabana', categoria: 'carne', proteina: 18, carbs: 2, gordura: 25, calorias: 310, custo: 3.5, porcao: '100g' },
+            { id: 39, nome: 'Fraldinha', categoria: 'carne', proteina: 30, carbs: 0, gordura: 10, calorias: 218, custo: 5.0, porcao: '100g' },
+            { id: 40, nome: 'Acém Bovino', categoria: 'carne', proteina: 29, carbs: 0, gordura: 7, calorias: 183, custo: 3.5, porcao: '100g' },
+            // === PEIXES DO PANTANAL E REGIÃO ===
+            { id: 41, nome: 'Pintado', categoria: 'peixe', proteina: 24, carbs: 0, gordura: 4, calorias: 132, custo: 8.0, porcao: '100g' },
+            { id: 42, nome: 'Pacu', categoria: 'peixe', proteina: 22, carbs: 0, gordura: 8, calorias: 160, custo: 6.0, porcao: '100g' },
+            { id: 43, nome: 'Dourado', categoria: 'peixe', proteina: 23, carbs: 0, gordura: 5, calorias: 137, custo: 9.0, porcao: '100g' },
+            { id: 44, nome: 'Cachara', categoria: 'peixe', proteina: 22, carbs: 0, gordura: 3, calorias: 115, custo: 7.5, porcao: '100g' },
+            { id: 45, nome: 'Piraputanga', categoria: 'peixe', proteina: 21, carbs: 0, gordura: 6, calorias: 142, custo: 6.5, porcao: '100g' },
+            { id: 46, nome: 'Tucunaré', categoria: 'peixe', proteina: 25, carbs: 0, gordura: 2, calorias: 118, custo: 8.5, porcao: '100g' },
+            { id: 47, nome: 'Piau (Piau-Três-Pintas)', categoria: 'peixe', proteina: 20, carbs: 0, gordura: 5, calorias: 125, custo: 5.0, porcao: '100g' },
+            { id: 48, nome: 'Tambaqui', categoria: 'peixe', proteina: 23, carbs: 0, gordura: 7, calorias: 155, custo: 6.0, porcao: '100g' },
+            // === AVES REGIONAIS ===
+            { id: 49, nome: 'Galinha Caipira', categoria: 'frango', proteina: 28, carbs: 0, gordura: 7, calorias: 179, custo: 2.5, porcao: '100g' },
+            { id: 50, nome: 'Moela de Frango', categoria: 'frango', proteina: 27, carbs: 0, gordura: 5, calorias: 153, custo: 1.8, porcao: '100g' },
+            { id: 51, nome: 'Coração de Frango', categoria: 'frango', proteina: 26, carbs: 0, gordura: 8, calorias: 178, custo: 2.0, porcao: '100g' },
+            { id: 52, nome: 'Fígado de Frango', categoria: 'frango', proteina: 24, carbs: 1, gordura: 5, calorias: 145, custo: 1.5, porcao: '100g' },
+            { id: 53, nome: 'Peru Assado', categoria: 'frango', proteina: 29, carbs: 0, gordura: 4, calorias: 154, custo: 4.0, porcao: '100g' },
+            // === LATICÍNIOS REGIONAIS ===
+            { id: 54, nome: 'Queijo Meia Cura', categoria: 'laticinio', proteina: 25, carbs: 2, gordura: 28, calorias: 362, custo: 4.5, porcao: '100g' },
+            { id: 55, nome: 'Requeijão Cremoso', categoria: 'laticinio', proteina: 10, carbs: 2, gordura: 22, calorias: 250, custo: 2.0, porcao: '100g' },
+            { id: 56, nome: 'Queijo Coalho', categoria: 'laticinio', proteina: 21, carbs: 2, gordura: 24, calorias: 310, custo: 3.5, porcao: '100g' },
+            // === OUTROS PROTEICOS REGIONAIS ===
+            { id: 57, nome: 'Charque', categoria: 'carne', proteina: 48, carbs: 0, gordura: 6, calorias: 246, custo: 7.0, porcao: '100g' },
+            { id: 58, nome: 'Mocotó (Carne)', categoria: 'carne', proteina: 22, carbs: 0, gordura: 4, calorias: 124, custo: 2.0, porcao: '100g' },
+            { id: 59, nome: 'Rabada Bovina', categoria: 'carne', proteina: 26, carbs: 0, gordura: 15, calorias: 245, custo: 3.5, porcao: '100g' },
+            { id: 60, nome: 'Buchada de Boi', categoria: 'carne', proteina: 18, carbs: 2, gordura: 8, calorias: 152, custo: 2.5, porcao: '100g' },
         ];
 
         const carbsDatabase = [
@@ -2946,32 +2987,44 @@
                 cafe: {
                     allowed: ['suplemento', 'laticinio', 'outros'], // Whey, iogurte, ovos, cottage
                     forbidden: ['carne', 'peixe'], // Não faz sentido bife no café
-                    preferredNames: ['Whey Protein', 'Ovo Inteiro Cozido', 'Ovo Mexido', 'Clara de Ovo', 'Iogurte Grego Natural', 'Queijo Cottage', 'Queijo Minas Frescal']
+                    preferredNames: ['Whey Protein', 'Ovo Inteiro Cozido', 'Ovo Mexido', 'Clara de Ovo', 'Iogurte Grego Natural', 'Queijo Cottage', 'Queijo Minas Frescal', 'Queijo Coalho', 'Requeijão Cremoso']
                 },
                 lancheManha: {
                     allowed: ['suplemento', 'laticinio', 'outros'],
                     forbidden: ['carne', 'peixe', 'frango'],
-                    preferredNames: ['Whey Protein', 'Iogurte Grego Natural', 'Queijo Cottage', 'Barra de Proteína', 'Pasta de Amendoim', 'Clara de Ovo']
+                    preferredNames: ['Whey Protein', 'Iogurte Grego Natural', 'Queijo Cottage', 'Barra de Proteína', 'Pasta de Amendoim', 'Clara de Ovo', 'Queijo Coalho', 'Queijo Meia Cura']
                 },
                 almoco: {
                     allowed: ['carne', 'frango', 'peixe', 'vegetal', 'outros'],
                     forbidden: ['suplemento'], // Não tomar whey no almoço
-                    preferredNames: ['Peito de Frango Grelhado', 'Patinho Bovino', 'Alcatra', 'Tilápia', 'Salmão', 'Frango Desfiado', 'Filé Mignon', 'Contra-Filé']
+                    preferredNames: ['Peito de Frango Grelhado', 'Patinho Bovino', 'Alcatra', 'Tilápia', 'Salmão', 'Frango Desfiado', 'Filé Mignon', 'Contra-Filé',
+                        // Carnes Centro-Oeste
+                        'Maminha', 'Fraldinha', 'Carne de Sol', 'Acém Bovino', 'Cupim Bovino',
+                        // Peixes do Pantanal
+                        'Pintado', 'Pacu', 'Dourado', 'Tambaqui', 'Tucunaré', 'Piraputanga',
+                        // Aves regionais
+                        'Galinha Caipira', 'Moela de Frango', 'Coração de Frango']
                 },
                 lancheTarde: {
                     allowed: ['suplemento', 'laticinio', 'outros', 'vegetal'],
                     forbidden: ['carne', 'peixe'],
-                    preferredNames: ['Whey Protein', 'Iogurte Grego Natural', 'Queijo Cottage', 'Ovo Inteiro Cozido', 'Pasta de Amendoim', 'Barra de Proteína']
+                    preferredNames: ['Whey Protein', 'Iogurte Grego Natural', 'Queijo Cottage', 'Ovo Inteiro Cozido', 'Pasta de Amendoim', 'Barra de Proteína', 'Queijo Coalho', 'Requeijão Cremoso']
                 },
                 jantar: {
                     allowed: ['carne', 'frango', 'peixe', 'vegetal', 'laticinio', 'outros'],
                     forbidden: ['suplemento'],
-                    preferredNames: ['Peito de Frango Grelhado', 'Tilápia', 'Salmão', 'Patinho Bovino', 'Alcatra', 'Ovo Inteiro Cozido', 'Sardinha', 'Merluza']
+                    preferredNames: ['Peito de Frango Grelhado', 'Tilápia', 'Salmão', 'Patinho Bovino', 'Alcatra', 'Ovo Inteiro Cozido', 'Sardinha', 'Merluza',
+                        // Carnes Centro-Oeste
+                        'Maminha', 'Fraldinha', 'Carne de Sol', 'Rabada Bovina', 'Costela Bovina',
+                        // Peixes do Pantanal
+                        'Pintado', 'Pacu', 'Dourado', 'Cachara', 'Piau (Piau-Três-Pintas)',
+                        // Aves regionais
+                        'Galinha Caipira', 'Peru Assado']
                 },
                 ceia: {
                     allowed: ['suplemento', 'laticinio', 'outros'],
                     forbidden: ['carne', 'frango', 'peixe'], // Digestão lenta antes de dormir
-                    preferredNames: ['Caseína', 'Queijo Cottage', 'Iogurte Grego Natural', 'Clara de Ovo', 'Ricota']
+                    preferredNames: ['Caseína', 'Queijo Cottage', 'Iogurte Grego Natural', 'Clara de Ovo', 'Ricota', 'Queijo Meia Cura', 'Requeijão Cremoso']
                 }
             };
 
@@ -2987,6 +3040,26 @@
                 'Pasta de Amendoim': { maxGrams: 30, maxUnits: 2, unit: 'colheres' },
                 'Iogurte Grego Natural': { maxGrams: 200, maxUnits: 1, unit: 'pote' },
                 'Barra de Proteína': { maxGrams: 60, maxUnits: 1, unit: 'unidade' },
+                // Carnes Centro-Oeste (porções maiores para churrasco)
+                'Cupim Bovino': { maxGrams: 180, maxUnits: 1, unit: 'porção' },
+                'Costela Bovina': { maxGrams: 200, maxUnits: 1, unit: 'porção' },
+                'Linguiça Cuiabana': { maxGrams: 100, maxUnits: 2, unit: 'unidades' },
+                'Carne de Sol': { maxGrams: 150, maxUnits: 1, unit: 'porção' },
+                'Carne Seca (Jabá)': { maxGrams: 100, maxUnits: 1, unit: 'porção' },
+                'Charque': { maxGrams: 80, maxUnits: 1, unit: 'porção' },
+                // Miúdos de frango (porções menores)
+                'Moela de Frango': { maxGrams: 150, maxUnits: 1, unit: 'porção' },
+                'Coração de Frango': { maxGrams: 150, maxUnits: 1, unit: 'porção' },
+                'Fígado de Frango': { maxGrams: 100, maxUnits: 1, unit: 'porção' },
+                // Laticínios regionais
+                'Requeijão Cremoso': { maxGrams: 50, maxUnits: 2, unit: 'colheres' },
+                'Queijo Coalho': { maxGrams: 80, maxUnits: 2, unit: 'fatias' },
+                'Queijo Meia Cura': { maxGrams: 60, maxUnits: 2, unit: 'fatias' },
+                // Peixes do Pantanal (porções generosas)
+                'Pintado': { maxGrams: 200, maxUnits: 1, unit: 'filé' },
+                'Pacu': { maxGrams: 200, maxUnits: 1, unit: 'posta' },
+                'Dourado': { maxGrams: 180, maxUnits: 1, unit: 'posta' },
+                'Tambaqui': { maxGrams: 200, maxUnits: 1, unit: 'posta' },
                 // Carnes/peixes: porções normais de 100-200g
                 'default_meat': { maxGrams: 200 },
                 'default_fish': { maxGrams: 180 }
